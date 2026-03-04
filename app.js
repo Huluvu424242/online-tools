@@ -245,8 +245,9 @@ function initRegex() {
     const status = $("#rxStatus");
     const copyBtn = $("#rxCopyMatches");
     const safety = $("#rxSafety");
+    const remoteConsent = $("#rxRemoteConsent");
 
-    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety) return;
+    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent) return;
 
     const flagEls = {
         g: $("#rxFlagG"),
@@ -334,69 +335,70 @@ function initRegex() {
     const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0"); // stable version
 
     async function analyzeCatastrophicBacktrackingRisk(patternText /*, flags */) {
-        // 1) safe-regex (lokal)
-        let safeRegex;
-        try {
-            const mod = await safeRegexModule;
-            safeRegex = mod?.default ?? mod;
-        } catch (e) {
-            return {
-                classification: "warn",
-                message: "safe-regex: konnte nicht geladen werden"
-            };
-        }
+        const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
 
-        const safeOk = safeRegex(patternText); // boolean
-        if (!safeOk) {
-            return {
-                classification: "warn",
-                message: "safe-regex: potenziell gefährlich (Backtracking möglich)"
-            };
-        }
-
-        // 2) vuln-regex-detector (remote lookup, entspricht dem Cache-Server-API)
-        // API lt. Repo: POST https://toybox.cs.vt.edu:8000/api/lookup  {pattern, language, requestType}
-        // Ergebnis: SAFE | VULNERABLE | UNKNOWN | INVALID
-        // :contentReference[oaicite:3]{index=3}
-        let data;
-        try {
-            const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    pattern: patternText,
-                    language: "javascript",
-                    requestType: "LOOKUP_ONLY"
-                })
-            });
-
-            if (!resp.ok) {
-                return { classification: "warn", message: `vuln-regex-detector: HTTP ${resp.status}` };
+        async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRemote) {
+            // 1) safe-regex (lokal)
+            let safeRegex;
+            try {
+                const mod = await safeRegexModule;
+                safeRegex = mod?.default ?? mod;
+            } catch {
+                return { classification: "warn", message: "safe-regex: konnte nicht geladen werden" };
             }
-            data = await resp.json();
-        } catch (e) {
-            return { classification: "warn", message: "vuln-regex-detector: nicht erreichbar (Netzwerk)" };
+
+            const safeOk = safeRegex(patternText);
+            if (!safeOk) {
+                return { classification: "warn", message: "safe-regex: potenziell gefährlich (Backtracking möglich)" };
+            }
+
+            // 2) Remote nur bei Opt-in
+            if (!allowRemote) {
+                return {
+                    classification: "warn",
+                    message: "Remote-Check deaktiviert (Opt-in erforderlich) – lokal: OK"
+                };
+            }
+
+            // 3) vuln-regex-detector (remote)
+            let data;
+            try {
+                const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        pattern: patternText,
+                        language: "javascript",
+                        requestType: "LOOKUP_ONLY"
+                    })
+                });
+
+                if (!resp.ok) {
+                    return { classification: "warn", message: `vuln-regex-detector: HTTP ${resp.status}` };
+                }
+                data = await resp.json();
+            } catch {
+                return { classification: "warn", message: "vuln-regex-detector: nicht erreichbar (Netzwerk)" };
+            }
+
+            const r = (typeof data?.result === "string")
+                ? data.result
+                : (data?.result?.result ?? data?.result?.result?.result);
+
+            if (r === "SAFE") {
+                return { classification: "safe", message: "OK (safe-regex + vuln-regex-detector: SAFE)" };
+            }
+
+            if (r === "VULNERABLE") {
+                return { classification: "warn", message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)" };
+            }
+
+            if (r === "INVALID") {
+                return { classification: "warn", message: "vuln-regex-detector: INVALID (Regex ungültig)" };
+            }
+
+            return { classification: "warn", message: `vuln-regex-detector: ${r ?? "UNKNOWN"}` };
         }
-
-        // Robust: result kann "UNKNOWN" sein oder ein Objekt mit result.result
-        const r = (typeof data?.result === "string")
-            ? data.result
-            : (data?.result?.result ?? data?.result?.result?.result);
-
-        if (r === "SAFE") {
-            return { classification: "safe", message: "OK (safe-regex + vuln-regex-detector: SAFE)" };
-        }
-
-        if (r === "VULNERABLE") {
-            return { classification: "warn", message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)" };
-        }
-
-        if (r === "INVALID") {
-            return { classification: "warn", message: "vuln-regex-detector: INVALID (Regex ungültig)" };
-        }
-
-        // UNKNOWN oder alles andere -> NICHT ok (deine Regel: nur ok wenn beide ok)
-        return { classification: "warn", message: `vuln-regex-detector: ${r ?? "UNKNOWN"}` };
     }
 
     function renderMatches(regex, srcText) {
@@ -447,17 +449,14 @@ function initRegex() {
             return;
         }
 
-        // Safety zuerst: “prüfe…”
         setSafety("neutral", "Prüfe…");
 
-        // Flags wie gehabt
         const flags = getFlags();
+        const allowRemote = remoteConsent.checked;
 
-        // 1) Safety-Check (async)
-        const risk = await analyzeCatastrophicBacktrackingRisk(p, flags);
+        const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRemote);
         setSafety(risk.classification, risk.message);
 
-        // 2) Danach normaler Regex-Run (wie vorher)
         try {
             const rx = new RegExp(p, flags);
             const { matches } = renderMatches(rx, t);
@@ -474,6 +473,7 @@ function initRegex() {
         text.value = "";
         result.innerHTML = `<p class="muted">Noch nichts ausgeführt.</p>`;
         setStatus("Geleert.");
+        remoteConsent.checked = false;
         setSafety("neutral", "Noch nicht geprüft.");
     });
 

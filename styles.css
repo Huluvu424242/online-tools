@@ -216,6 +216,23 @@ input[type="text"], input[type="search"], textarea {
 }
 textarea:focus, input:focus { box-shadow: var(--focus); border-color: var(--accent); }
 
+.consent {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.consent input {
+    width: 18px;
+    height: 18px;
+}
+
 .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
 .space-between { justify-content: space-between; }
 
