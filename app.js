@@ -74,7 +74,7 @@ function initNavHighlight() {
             .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (!visible) return;
         setCurrent(`#${visible.target.id}`);
-    }, { root: null, threshold: [0.25, 0.4, 0.6] });
+    }, {root: null, threshold: [0.25, 0.4, 0.6]});
 
     sections.forEach(s => obs.observe(s));
 
@@ -130,7 +130,7 @@ function initToolSearch() {
 
     // Ctrl/⌘ K focus
     window.addEventListener("keydown", (e) => {
-        const isK = e.key.toLowerCase() === "k";
+        const isK = e.key && e.key.toLowerCase() === "k";
         if ((e.ctrlKey || e.metaKey) && isK) {
             e.preventDefault();
             input.focus();
@@ -244,8 +244,10 @@ function initRegex() {
     const result = $("#rxResult");
     const status = $("#rxStatus");
     const copyBtn = $("#rxCopyMatches");
+    const safety = $("#rxSafety");
+    const remoteConsent = $("#rxRemoteConsent");
 
-    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn) return;
+    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent) return;
 
     const flagEls = {
         g: $("#rxFlagG"),
@@ -263,23 +265,177 @@ function initRegex() {
         status.style.color = isError ? "var(--danger)" : "var(--muted)";
     };
 
+    function setSafety(state, message) {
+        // state: "neutral" | "safe" | "warn"
+        safety.classList.remove("flat-safe", "flat-warn");
+        // const valueEl = $(".flat-value", safety) || safety;
+
+        if (state === "safe") safety.classList.add("flat-safe");
+        if (state === "warn") safety.classList.add("flat-warn");
+
+        // If the markup exists:
+        if ($(".flat-value", safety)) {
+            $(".flat-value", safety).textContent = message;
+        } else {
+            safety.textContent = message;
+        }
+    }
+
+
+    // 1) safe-regex einmal laden (cached Promise)
+    const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
+
+    // 2) redos-detector einmal laden (cached Promise)
+    const redosDetectorModule = import("https://esm.sh/redos-detector@6.1.2");
+
+    /**
+     * 3-stufige ReDoS-Prüfung:
+     * - safe-regex (lokal, schnell)
+     * - redos-detector (lokal, genauer)
+     * - vuln-regex-detector (remote, nur bei Opt-in)
+     *
+     * Rückgabe:
+     * { classification: "safe" | "warn" | "neutral", message: string }
+     */
+    async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRemote) {
+        // -------------------------
+        // 1) safe-regex (lokal)
+        // -------------------------
+        let safeRegex;
+        try {
+            const mod = await safeRegexModule;
+            safeRegex = mod.default || mod;
+        } catch {
+            return {classification: "warn", message: "safe-regex: Bibliothek konnte nicht geladen werden"};
+        }
+
+        let safeOk = false;
+        try {
+            safeOk = safeRegex(patternText);
+        } catch {
+            return {classification: "warn", message: "safe-regex: Analyse fehlgeschlagen"};
+        }
+
+        if (!safeOk) {
+            return {classification: "warn", message: "safe-regex: potenziell gefährlich (Backtracking möglich)"};
+        }
+
+        // -------------------------
+        // 2) redos-detector (lokal)
+        // -------------------------
+        let isSafePattern;
+        try {
+            const mod = await redosDetectorModule;
+            // esm-sh kann default oder named liefern
+            isSafePattern = mod.isSafePattern || mod.default?.isSafePattern || mod.default;
+        } catch {
+            return {classification: "warn", message: "redos-detector: Bibliothek konnte nicht geladen werden"};
+        }
+
+        // Flags in Optionen übersetzen (redos-detector akzeptiert diese Optionen) :contentReference[oaicite:4]{index=4}
+        const opts = {
+            caseInsensitive: flags.includes("i"),
+            unicode: flags.includes("u"),
+            dotAll: flags.includes("s"),
+            multiLine: flags.includes("m"),
+
+            // wichtig für UI: nicht ewig rechnen
+            timeout: 80,     // ms (klein halten, sonst UI zäh)
+            maxSteps: 20000, // Default lt. Doku; bleibt ok
+            maxScore: 200    // Default lt. Doku
+        };
+
+        let rd;
+        try {
+            rd = isSafePattern(patternText, opts);
+        } catch (e) {
+            return {
+                classification: "warn",
+                message: `redos-detector: Analyse fehlgeschlagen (${e?.message || "Fehler"})`
+            };
+        }
+
+        if (!rd?.safe) {
+            const scoreText = rd?.score?.infinite
+                ? "Score: ∞"
+                : (typeof rd?.score?.value === "number" ? `Score: ${rd.score.value}` : "Score: ?");
+
+            const errText = rd?.error ? ` (${rd.error})` : "";
+            return {
+                classification: "warn",
+                message: `redos-detector: UNSAFE – ${scoreText}${errText}`
+            };
+        }
+
+        // -------------------------
+        // 3) Remote (nur bei Opt-in)
+        // -------------------------
+        if (!allowRemote) {
+            return {
+                classification: "safe",
+                message: "OK (lokal: safe-regex + redos-detector)"
+            };
+        }
+
+        let data;
+        try {
+            const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    pattern: patternText,
+                    language: "javascript",
+                    requestType: "LOOKUP_ONLY"
+                })
+            });
+
+            if (!resp.ok) {
+                return {classification: "warn", message: `vuln-regex-detector: HTTP ${resp.status}`};
+            }
+            data = await resp.json();
+        } catch (e) {
+            // Browser zeigt bei CORS typischerweise nur "Failed to fetch"
+            return {
+                classification: "warn",
+                message: `vuln-regex-detector: Request fehlgeschlagen (${e?.message || "Failed to fetch / CORS"})`
+            };
+        }
+
+        const r =
+            (typeof data?.result === "string") ? data.result :
+                (typeof data?.result?.result === "string") ? data.result.result :
+                    null;
+
+        if (r === "SAFE") {
+            return {classification: "safe", message: "OK (lokal + remote: SAFE)"};
+        }
+        if (r === "VULNERABLE") {
+            return {classification: "warn", message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)"};
+        }
+        if (r === "INVALID") {
+            return {classification: "warn", message: "vuln-regex-detector: INVALID (Regex ungültig)"};
+        }
+        return {classification: "warn", message: `vuln-regex-detector: ${r || "UNKNOWN"}`};
+    }
+
+
     function renderMatches(regex, srcText) {
         // For highlighting, we build a list of match ranges.
         const matches = [];
         if (regex.global) {
             let m;
             while ((m = regex.exec(srcText)) !== null) {
-                matches.push({ start: m.index, end: m.index + m[0].length, value: m[0] });
+                matches.push({start: m.index, end: m.index + m[0].length, value: m[0]});
                 if (m[0].length === 0) regex.lastIndex++; // avoid infinite loop
             }
         } else {
             const m = regex.exec(srcText);
-            if (m) matches.push({ start: m.index, end: m.index + m[0].length, value: m[0] });
+            if (m) matches.push({start: m.index, end: m.index + m[0].length, value: m[0]});
         }
 
         if (matches.length === 0) {
             result.innerHTML = `<p class="muted">Keine Treffer.</p>`;
-            return { matches };
+            return {matches};
         }
 
         // Build highlighted HTML safely
@@ -297,24 +453,31 @@ function initRegex() {
       <div class="mono">${html.replace(/\n/g, "<br>")}</div>
     `;
 
-        return { matches };
+        return {matches};
     }
 
-    runBtn.addEventListener("click", () => {
+    runBtn.addEventListener("click", async () => {
         const p = pattern.value;
         const t = text.value;
 
         if (!p) {
             setStatus("Bitte ein Pattern eingeben.", true);
             result.innerHTML = `<p class="muted">Noch nichts ausgeführt.</p>`;
+            setSafety("neutral", "Noch nicht geprüft.");
             return;
         }
 
-        try {
-            const flags = getFlags();
-            const rx = new RegExp(p, flags);
-            const { matches } = renderMatches(rx, t);
+        setSafety("neutral", `Prüfe: ${p}`);
 
+        const flags = getFlags();
+        const allowRemote = remoteConsent.checked;
+
+        const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRemote);
+        setSafety(risk.classification, `Geprüft  ${p} und ermittelt: ` + risk.message);
+
+        try {
+            const rx = new RegExp(p, flags);
+            const {matches} = renderMatches(rx, t);
             setStatus(`OK. Flags: ${flags || "(keine)"} · Treffer: ${matches.length}`);
             setAnnounce(`Regex geprüft. Treffer: ${matches.length}`);
         } catch (e) {
@@ -328,6 +491,8 @@ function initRegex() {
         text.value = "";
         result.innerHTML = `<p class="muted">Noch nichts ausgeführt.</p>`;
         setStatus("Geleert.");
+        remoteConsent.checked = false;
+        setSafety("neutral", "Noch nicht geprüft.");
     });
 
     copyBtn.addEventListener("click", async () => {
@@ -386,7 +551,7 @@ function initCron() {
         }
         const [min, hour, dom, mon, dow] = parts;
 
-        const lines = [
+        return [
             explainField("Minute", min),
             explainField("Stunde", hour),
             explainField("Tag im Monat", dom),
@@ -394,7 +559,6 @@ function initCron() {
             explainField("Wochentag", dow),
         ];
 
-        return lines;
     }
 
     explainBtn.addEventListener("click", () => {
@@ -421,10 +585,10 @@ function initCron() {
 
     examplesBtn.addEventListener("click", () => {
         const list = [
-            { e: "*/5 * * * *", d: "Alle 5 Minuten" },
-            { e: "0 9 * * 1-5", d: "Mo–Fr um 09:00" },
-            { e: "30 2 1 * *", d: "Am 1. jeden Monats um 02:30" },
-            { e: "0 0 * * 0", d: "Sonntag 00:00" },
+            {e: "*/5 * * * *", d: "Alle 5 Minuten"},
+            {e: "0 9 * * 1-5", d: "Mo–Fr um 09:00"},
+            {e: "30 2 1 * *", d: "Am 1. jeden Monats um 02:30"},
+            {e: "0 0 * * 0", d: "Sonntag 00:00"},
         ];
         result.innerHTML = `
       <ul>
@@ -436,7 +600,7 @@ function initCron() {
 
     clearBtn.addEventListener("click", () => {
         expr.value = "";
-        result.innerHTML = `<p class="muted">Gib einen Ausdruck ein und klicke “Erklären”.</p>`;
+        result.innerHTML = `<p class="muted">Gib einen Ausdruck ein und klicke „Erklären“.</p>`;
         setStatus("Geleert.");
     });
 }

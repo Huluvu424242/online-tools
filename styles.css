@@ -216,6 +216,23 @@ input[type="text"], input[type="search"], textarea {
 }
 textarea:focus, input:focus { box-shadow: var(--focus); border-color: var(--accent); }
 
+.consent {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.consent input {
+    width: 18px;
+    height: 18px;
+}
+
 .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
 .space-between { justify-content: space-between; }
 
@@ -247,6 +264,34 @@ textarea:focus, input:focus { box-shadow: var(--focus); border-color: var(--acce
     background: var(--surface);
 }
 .flags label { margin: 0; font-weight: 700; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+
+/* Flat result area (e.g., Regex safety status) */
+.flat-result {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    margin: 10px 0;
+
+    flex-wrap: wrap;
+}
+
+.flat-label {
+    font-weight: 800;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.flat-value {
+    font-weight: 750;
+}
+
+/* Optional semantic states */
+.flat-safe .flat-value { color: var(--accent-2); }
+.flat-warn .flat-value { color: var(--danger); }
 
 .result {
     border: 1px dashed var(--border);
