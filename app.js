@@ -74,7 +74,7 @@ function initNavHighlight() {
             .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (!visible) return;
         setCurrent(`#${visible.target.id}`);
-    }, { root: null, threshold: [0.25, 0.4, 0.6] });
+    }, {root: null, threshold: [0.25, 0.4, 0.6]});
 
     sections.forEach(s => obs.observe(s));
 
@@ -331,74 +331,120 @@ function initRegex() {
         return false;
     }
 
-    // Einmal laden (cachen)
-    const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0"); // stable version
+    // safe-regex einmal laden (cached Promise)
+    const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
 
-    async function analyzeCatastrophicBacktrackingRisk(patternText /*, flags */) {
-        const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
+    /**
+     * Prüft Regex auf potenzielles catastrophic backtracking.
+     * Rückgabe:
+     *   { classification: "safe" | "warn" | "neutral", message: string }
+     */
+    async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRemote) {
 
-        async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRemote) {
-            // 1) safe-regex (lokal)
-            let safeRegex;
-            try {
-                const mod = await safeRegexModule;
-                safeRegex = mod?.default ?? mod;
-            } catch {
-                return { classification: "warn", message: "safe-regex: konnte nicht geladen werden" };
-            }
+        // --- 1) safe-regex lokal ---
+        let safeRegex;
+        try {
+            const mod = await safeRegexModule;
+            safeRegex = mod.default || mod;
+        } catch (e) {
+            return {
+                classification: "warn",
+                message: "safe-regex: Bibliothek konnte nicht geladen werden"
+            };
+        }
 
-            const safeOk = safeRegex(patternText);
-            if (!safeOk) {
-                return { classification: "warn", message: "safe-regex: potenziell gefährlich (Backtracking möglich)" };
-            }
+        let safeOk = false;
+        try {
+            safeOk = safeRegex(patternText);
+        } catch (e) {
+            return {
+                classification: "warn",
+                message: "safe-regex: Regex konnte nicht analysiert werden"
+            };
+        }
 
-            // 2) Remote nur bei Opt-in
-            if (!allowRemote) {
+        if (!safeOk) {
+            return {
+                classification: "warn",
+                message: "safe-regex: potenziell gefährlich (Backtracking möglich)"
+            };
+        }
+
+        // --- 2) Remote-Check nur bei Opt-in ---
+        if (!allowRemote) {
+            return {
+                classification: "neutral",
+                message: "Remote-Check deaktiviert – lokal: OK"
+            };
+        }
+
+        // --- 3) vuln-regex-detector remote ---
+        let data;
+
+        try {
+            const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    pattern: patternText,
+                    language: "javascript",
+                    requestType: "LOOKUP_ONLY"
+                })
+            });
+
+            if (!resp.ok) {
                 return {
                     classification: "warn",
-                    message: "Remote-Check deaktiviert (Opt-in erforderlich) – lokal: OK"
+                    message: `vuln-regex-detector: HTTP ${resp.status}`
                 };
             }
 
-            // 3) vuln-regex-detector (remote)
-            let data;
-            try {
-                const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        pattern: patternText,
-                        language: "javascript",
-                        requestType: "LOOKUP_ONLY"
-                    })
-                });
+            data = await resp.json();
 
-                if (!resp.ok) {
-                    return { classification: "warn", message: `vuln-regex-detector: HTTP ${resp.status}` };
-                }
-                data = await resp.json();
-            } catch {
-                return { classification: "warn", message: "vuln-regex-detector: nicht erreichbar (Netzwerk)" };
-            }
-
-            const r = (typeof data?.result === "string")
-                ? data.result
-                : (data?.result?.result ?? data?.result?.result?.result);
-
-            if (r === "SAFE") {
-                return { classification: "safe", message: "OK (safe-regex + vuln-regex-detector: SAFE)" };
-            }
-
-            if (r === "VULNERABLE") {
-                return { classification: "warn", message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)" };
-            }
-
-            if (r === "INVALID") {
-                return { classification: "warn", message: "vuln-regex-detector: INVALID (Regex ungültig)" };
-            }
-
-            return { classification: "warn", message: `vuln-regex-detector: ${r ?? "UNKNOWN"}` };
+        } catch (e) {
+            return {
+                classification: "warn",
+                message: "vuln-regex-detector: Netzwerkfehler"
+            };
         }
+
+        // --- Ergebnis robust extrahieren ---
+        let resultValue = null;
+
+        if (typeof data?.result === "string") {
+            resultValue = data.result;
+        } else if (typeof data?.result?.result === "string") {
+            resultValue = data.result.result;
+        }
+
+        // --- Auswertung ---
+        if (resultValue === "SAFE") {
+            return {
+                classification: "safe",
+                message: "OK (safe-regex + vuln-regex-detector: SAFE)"
+            };
+        }
+
+        if (resultValue === "VULNERABLE") {
+            return {
+                classification: "warn",
+                message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)"
+            };
+        }
+
+        if (resultValue === "INVALID") {
+            return {
+                classification: "warn",
+                message: "vuln-regex-detector: INVALID (Regex ungültig)"
+            };
+        }
+
+        return {
+            classification: "warn",
+            message: `vuln-regex-detector: ${resultValue || "UNKNOWN"}`
+        };
     }
 
     function renderMatches(regex, srcText) {
@@ -407,17 +453,17 @@ function initRegex() {
         if (regex.global) {
             let m;
             while ((m = regex.exec(srcText)) !== null) {
-                matches.push({ start: m.index, end: m.index + m[0].length, value: m[0] });
+                matches.push({start: m.index, end: m.index + m[0].length, value: m[0]});
                 if (m[0].length === 0) regex.lastIndex++; // avoid infinite loop
             }
         } else {
             const m = regex.exec(srcText);
-            if (m) matches.push({ start: m.index, end: m.index + m[0].length, value: m[0] });
+            if (m) matches.push({start: m.index, end: m.index + m[0].length, value: m[0]});
         }
 
         if (matches.length === 0) {
             result.innerHTML = `<p class="muted">Keine Treffer.</p>`;
-            return { matches };
+            return {matches};
         }
 
         // Build highlighted HTML safely
@@ -435,7 +481,7 @@ function initRegex() {
       <div class="mono">${html.replace(/\n/g, "<br>")}</div>
     `;
 
-        return { matches };
+        return {matches};
     }
 
     runBtn.addEventListener("click", async () => {
@@ -459,7 +505,7 @@ function initRegex() {
 
         try {
             const rx = new RegExp(p, flags);
-            const { matches } = renderMatches(rx, t);
+            const {matches} = renderMatches(rx, t);
             setStatus(`OK. Flags: ${flags || "(keine)"} · Treffer: ${matches.length}`);
             setAnnounce(`Regex geprüft. Treffer: ${matches.length}`);
         } catch (e) {
@@ -567,10 +613,10 @@ function initCron() {
 
     examplesBtn.addEventListener("click", () => {
         const list = [
-            { e: "*/5 * * * *", d: "Alle 5 Minuten" },
-            { e: "0 9 * * 1-5", d: "Mo–Fr um 09:00" },
-            { e: "30 2 1 * *", d: "Am 1. jeden Monats um 02:30" },
-            { e: "0 0 * * 0", d: "Sonntag 00:00" },
+            {e: "*/5 * * * *", d: "Alle 5 Minuten"},
+            {e: "0 9 * * 1-5", d: "Mo–Fr um 09:00"},
+            {e: "30 2 1 * *", d: "Am 1. jeden Monats um 02:30"},
+            {e: "0 0 * * 0", d: "Sonntag 00:00"},
         ];
         result.innerHTML = `
       <ul>
