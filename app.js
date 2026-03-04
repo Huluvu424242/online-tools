@@ -382,6 +382,7 @@ function initRegex() {
         let data;
 
         try {
+            setSafety("neutral", "Prüfe lokal + remote…");
             const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
                 method: "POST",
                 headers: {
@@ -404,9 +405,11 @@ function initRegex() {
             data = await resp.json();
 
         } catch (e) {
+            const msg = (e && e.message) ? e.message : String(e);
+            // Bei CORS ist das oft: "Failed to fetch"
             return {
                 classification: "warn",
-                message: "vuln-regex-detector: Netzwerkfehler"
+                message: `vuln-regex-detector: Request fehlgeschlagen (${msg}) – oft CORS im Browser`
             };
         }
 
