@@ -258,6 +258,8 @@ textarea:focus, input:focus { box-shadow: var(--focus); border-color: var(--acce
     border: 1px solid var(--border);
     background: var(--surface);
     margin: 10px 0;
+
+    flex-wrap: wrap;
 }
 
 .flat-label {
