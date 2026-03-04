@@ -246,7 +246,7 @@ function initRegex() {
     const copyBtn = $("#rxCopyMatches");
     const safety = $("#rxSafety");
 
-    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn | !safety) return;
+    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety) return;
 
     const flagEls = {
         g: $("#rxFlagG"),
@@ -267,7 +267,7 @@ function initRegex() {
     function setSafety(state, message) {
         // state: "neutral" | "safe" | "warn"
         safety.classList.remove("flat-safe", "flat-warn");
-        const valueEl = $(".flat-value", safety) || safety;
+        // const valueEl = $(".flat-value", safety) || safety;
 
         if (state === "safe") safety.classList.add("flat-safe");
         if (state === "warn") safety.classList.add("flat-warn");
@@ -491,7 +491,7 @@ function initCron() {
         }
         const [min, hour, dom, mon, dow] = parts;
 
-        const lines = [
+        return [
             explainField("Minute", min),
             explainField("Stunde", hour),
             explainField("Tag im Monat", dom),
@@ -499,7 +499,6 @@ function initCron() {
             explainField("Wochentag", dow),
         ];
 
-        return lines;
     }
 
     explainBtn.addEventListener("click", () => {
