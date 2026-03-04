@@ -248,6 +248,32 @@ textarea:focus, input:focus { box-shadow: var(--focus); border-color: var(--acce
 }
 .flags label { margin: 0; font-weight: 700; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
 
+/* Flat result area (e.g., Regex safety status) */
+.flat-result {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    margin: 10px 0;
+}
+
+.flat-label {
+    font-weight: 800;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.flat-value {
+    font-weight: 750;
+}
+
+/* Optional semantic states */
+.flat-safe .flat-value { color: var(--accent-2); }
+.flat-warn .flat-value { color: var(--danger); }
+
 .result {
     border: 1px dashed var(--border);
     border-radius: 12px;

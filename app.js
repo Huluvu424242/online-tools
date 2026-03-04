@@ -130,7 +130,7 @@ function initToolSearch() {
 
     // Ctrl/⌘ K focus
     window.addEventListener("keydown", (e) => {
-        const isK = e.key.toLowerCase() === "k";
+        const isK = e.key && e.key.toLowerCase() === "k";
         if ((e.ctrlKey || e.metaKey) && isK) {
             e.preventDefault();
             input.focus();
@@ -244,8 +244,9 @@ function initRegex() {
     const result = $("#rxResult");
     const status = $("#rxStatus");
     const copyBtn = $("#rxCopyMatches");
+    const safety = $("#rxSafety");
 
-    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn) return;
+    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn | !safety) return;
 
     const flagEls = {
         g: $("#rxFlagG"),
@@ -262,6 +263,106 @@ function initRegex() {
         status.textContent = msg;
         status.style.color = isError ? "var(--danger)" : "var(--muted)";
     };
+
+    function setSafety(state, message) {
+        // state: "neutral" | "safe" | "warn"
+        safety.classList.remove("flat-safe", "flat-warn");
+        const valueEl = $(".flat-value", safety) || safety;
+
+        if (state === "safe") safety.classList.add("flat-safe");
+        if (state === "warn") safety.classList.add("flat-warn");
+
+        // If the markup exists:
+        if ($(".flat-value", safety)) {
+            $(".flat-value", safety).textContent = message;
+        } else {
+            safety.textContent = message;
+        }
+    }
+
+    function quantifierDepthScore(p) {
+        // Rough "star height" heuristic: nested quantifiers are suspicious.
+        // Not a full parser. We approximate using patterns that commonly lead to backtracking.
+        let score = 0;
+
+        // Nested quantifiers: ( ... + ... )+ , ( ... * ... )+, ( ... {m,n} ... )+
+        const nested = /(\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\))\s*(?:[+*]|\{\d+(?:,\d*)?\})/g;
+        if (nested.test(p)) score += 3;
+
+        // Repetition of wildcard-ish patterns: (.*)+ or (.+)+ or (?:.*){...}
+        const dotStarRepeat = /\((?:\?:)?(?:[^()\\]|\\.)*\.\*(?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d+(?:,\d*)?\})/;
+        if (dotStarRepeat.test(p)) score += 3;
+
+        // Multiple quantifiers close together: e.g. .*.*  or \w+.*+ (approx)
+        const manyQuant = /(?:[+*]|\{\d+(?:,\d*)?\}).*(?:[+*]|\{\d+(?:,\d*)?\})/;
+        if (manyQuant.test(p)) score += 1;
+
+        return score;
+    }
+
+    function hasRepeatedAlternation(p) {
+        // (a|ab)+  or (foo|bar)* etc.
+        const altRepeated = /\((?:[^()\\]|\\.)*\|(?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d+(?:,\d*)?\})/;
+        return altRepeated.test(p);
+    }
+
+    function hasPrefixOverlapInAlternation(p) {
+        // Naively find simple alternations like (a|ab|abc)+ (no nested parens)
+        // and check if any alternative is a prefix of another -> classic backtracking risk.
+        const groupAlt = /\(([^()]*\|[^()]*)\)\s*(?:[+*]|\{\d+(?:,\d*)?\})/g;
+        let m;
+        while ((m = groupAlt.exec(p)) !== null) {
+            const body = m[1];
+            const alts = body.split("|").map(s => s.trim()).filter(Boolean);
+            // Keep only "simple-ish" alternatives (avoid meta-chars to reduce false alarms)
+            const simple = alts.filter(a => /^[a-zA-Z0-9_\-\\]+$/.test(a));
+            for (let i = 0; i < simple.length; i++) {
+                for (let j = 0; j < simple.length; j++) {
+                    if (i === j) continue;
+                    const A = simple[i];
+                    const B = simple[j];
+                    if (A && B && (A !== B) && (A.startsWith(B) || B.startsWith(A))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    function analyzeCatastrophicBacktrackingRisk(patternText, flags) {
+        // Heuristic classification.
+        // Reasoning: catastrophic backtracking typically appears with ambiguous repetition:
+        // nested quantifiers or overlapping alternation with repetition. :contentReference[oaicite:1]{index=1}
+        const p = patternText;
+
+        // Quick sanity: if it uses lookbehind etc. we still can rate; just be cautious.
+        let score = 0;
+
+        score += quantifierDepthScore(p);
+        if (hasRepeatedAlternation(p)) score += 2;
+        if (hasPrefixOverlapInAlternation(p)) score += 2;
+
+        // If pattern is anchored and simple, reduce slightly (weak heuristic)
+        if (/^\^/.test(p) && /\$$/.test(p)) score -= 1;
+
+        // 'g' doesn't change vulnerability, but we accept flags param for future extensions
+        const classification =
+            score >= 4 ? "warn" :
+                score >= 2 ? "warn" : // keep conservative: show "potentially vulnerable"
+                    "safe";
+
+        if (classification === "warn") {
+            return {
+                classification: "warn",
+                message: "Potenziell verwundbar (möglicher ReDoS / Backtracking)"
+            };
+        }
+        return {
+            classification: "safe",
+            message: "Kein offensichtliches Backtracking-Risiko erkannt"
+        };
+    }
 
     function renderMatches(regex, srcText) {
         // For highlighting, we build a list of match ranges.
@@ -312,6 +413,9 @@ function initRegex() {
 
         try {
             const flags = getFlags();
+            // NEU: Safety-Analyse (Heuristik)
+            const risk = analyzeCatastrophicBacktrackingRisk(p, flags);
+            setSafety(risk.classification, risk.message);
             const rx = new RegExp(p, flags);
             const { matches } = renderMatches(rx, t);
 
@@ -328,6 +432,7 @@ function initRegex() {
         text.value = "";
         result.innerHTML = `<p class="muted">Noch nichts ausgeführt.</p>`;
         setStatus("Geleert.");
+        setSafety("neutral", "Noch nicht geprüft.");
     });
 
     copyBtn.addEventListener("click", async () => {
