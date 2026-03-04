@@ -282,63 +282,106 @@ function initRegex() {
     }
 
 
-    // safe-regex einmal laden (cached Promise)
+    // 1) safe-regex einmal laden (cached Promise)
     const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
 
+    // 2) redos-detector einmal laden (cached Promise)
+    const redosDetectorModule = import("https://esm.sh/redos-detector@6.1.2");
+
     /**
-     * Prüft Regex auf potenzielles catastrophic backtracking.
+     * 3-stufige ReDoS-Prüfung:
+     * - safe-regex (lokal, schnell)
+     * - redos-detector (lokal, genauer)
+     * - vuln-regex-detector (remote, nur bei Opt-in)
+     *
      * Rückgabe:
-     *   { classification: "safe" | "warn" | "neutral", message: string }
+     * { classification: "safe" | "warn" | "neutral", message: string }
      */
     async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRemote) {
-
-        // --- 1) safe-regex lokal ---
+        // -------------------------
+        // 1) safe-regex (lokal)
+        // -------------------------
         let safeRegex;
         try {
             const mod = await safeRegexModule;
             safeRegex = mod.default || mod;
-        } catch (e) {
-            return {
-                classification: "warn",
-                message: "safe-regex: Bibliothek konnte nicht geladen werden"
-            };
+        } catch {
+            return {classification: "warn", message: "safe-regex: Bibliothek konnte nicht geladen werden"};
         }
 
         let safeOk = false;
         try {
             safeOk = safeRegex(patternText);
-        } catch (e) {
-            return {
-                classification: "warn",
-                message: "safe-regex: Regex konnte nicht analysiert werden"
-            };
+        } catch {
+            return {classification: "warn", message: "safe-regex: Analyse fehlgeschlagen"};
         }
 
         if (!safeOk) {
+            return {classification: "warn", message: "safe-regex: potenziell gefährlich (Backtracking möglich)"};
+        }
+
+        // -------------------------
+        // 2) redos-detector (lokal)
+        // -------------------------
+        let isSafePattern;
+        try {
+            const mod = await redosDetectorModule;
+            // esm-sh kann default oder named liefern
+            isSafePattern = mod.isSafePattern || mod.default?.isSafePattern || mod.default;
+        } catch {
+            return {classification: "warn", message: "redos-detector: Bibliothek konnte nicht geladen werden"};
+        }
+
+        // Flags in Optionen übersetzen (redos-detector akzeptiert diese Optionen) :contentReference[oaicite:4]{index=4}
+        const opts = {
+            caseInsensitive: flags.includes("i"),
+            unicode: flags.includes("u"),
+            dotAll: flags.includes("s"),
+            multiLine: flags.includes("m"),
+
+            // wichtig für UI: nicht ewig rechnen
+            timeout: 80,     // ms (klein halten, sonst UI zäh)
+            maxSteps: 20000, // Default lt. Doku; bleibt ok
+            maxScore: 200    // Default lt. Doku
+        };
+
+        let rd;
+        try {
+            rd = isSafePattern(patternText, opts);
+        } catch (e) {
             return {
                 classification: "warn",
-                message: "safe-regex: potenziell gefährlich (Backtracking möglich)"
+                message: `redos-detector: Analyse fehlgeschlagen (${e?.message || "Fehler"})`
             };
         }
 
-        // --- 2) Remote-Check nur bei Opt-in ---
+        if (!rd?.safe) {
+            const scoreText = rd?.score?.infinite
+                ? "Score: ∞"
+                : (typeof rd?.score?.value === "number" ? `Score: ${rd.score.value}` : "Score: ?");
+
+            const errText = rd?.error ? ` (${rd.error})` : "";
+            return {
+                classification: "warn",
+                message: `redos-detector: UNSAFE – ${scoreText}${errText}`
+            };
+        }
+
+        // -------------------------
+        // 3) Remote (nur bei Opt-in)
+        // -------------------------
         if (!allowRemote) {
             return {
-                classification: "neutral",
-                message: "Remote-Check deaktiviert – lokal: OK"
+                classification: "safe",
+                message: "OK (lokal: safe-regex + redos-detector)"
             };
         }
 
-        // --- 3) vuln-regex-detector remote ---
         let data;
-
         try {
-            setSafety("neutral", "Prüfe lokal + remote…");
             const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     pattern: patternText,
                     language: "javascript",
@@ -347,59 +390,34 @@ function initRegex() {
             });
 
             if (!resp.ok) {
-                return {
-                    classification: "warn",
-                    message: `vuln-regex-detector: HTTP ${resp.status}`
-                };
+                return {classification: "warn", message: `vuln-regex-detector: HTTP ${resp.status}`};
             }
-
             data = await resp.json();
-
         } catch (e) {
-            const msg = (e && e.message) ? e.message : String(e);
-            // Bei CORS ist das oft: "Failed to fetch"
+            // Browser zeigt bei CORS typischerweise nur "Failed to fetch"
             return {
                 classification: "warn",
-                message: `vuln-regex-detector: Request fehlgeschlagen (${msg}) – oft CORS im Browser`
+                message: `vuln-regex-detector: Request fehlgeschlagen (${e?.message || "Failed to fetch / CORS"})`
             };
         }
 
-        // --- Ergebnis robust extrahieren ---
-        let resultValue = null;
+        const r =
+            (typeof data?.result === "string") ? data.result :
+                (typeof data?.result?.result === "string") ? data.result.result :
+                    null;
 
-        if (typeof data?.result === "string") {
-            resultValue = data.result;
-        } else if (typeof data?.result?.result === "string") {
-            resultValue = data.result.result;
+        if (r === "SAFE") {
+            return {classification: "safe", message: "OK (lokal + remote: SAFE)"};
         }
-
-        // --- Auswertung ---
-        if (resultValue === "SAFE") {
-            return {
-                classification: "safe",
-                message: "OK (safe-regex + vuln-regex-detector: SAFE)"
-            };
+        if (r === "VULNERABLE") {
+            return {classification: "warn", message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)"};
         }
-
-        if (resultValue === "VULNERABLE") {
-            return {
-                classification: "warn",
-                message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)"
-            };
+        if (r === "INVALID") {
+            return {classification: "warn", message: "vuln-regex-detector: INVALID (Regex ungültig)"};
         }
-
-        if (resultValue === "INVALID") {
-            return {
-                classification: "warn",
-                message: "vuln-regex-detector: INVALID (Regex ungültig)"
-            };
-        }
-
-        return {
-            classification: "warn",
-            message: `vuln-regex-detector: ${resultValue || "UNKNOWN"}`
-        };
+        return {classification: "warn", message: `vuln-regex-detector: ${r || "UNKNOWN"}`};
     }
+
 
     function renderMatches(regex, srcText) {
         // For highlighting, we build a list of match ranges.
@@ -449,13 +467,13 @@ function initRegex() {
             return;
         }
 
-        setSafety("neutral", "Prüfe…");
+        setSafety("neutral", `Prüfe: ${p}`);
 
         const flags = getFlags();
         const allowRemote = remoteConsent.checked;
 
         const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRemote);
-        setSafety(risk.classification, risk.message);
+        setSafety(risk.classification, `Geprüft  ${p} und ermittelt: ` + risk.message);
 
         try {
             const rx = new RegExp(p, flags);
