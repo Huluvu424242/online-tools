@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>online-tools</title>
+    <meta name="description" content="Statische Online-Tools für Entwickler: Base64, Regex, Cron, u.v.m." />
+
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+</head>
+
+<body>
+<a class="skip-link" href="#main">Zum Inhalt springen</a>
+
+<header class="site-header" role="banner">
+    <div class="header-left">
+        <div class="brand" aria-label="online-tools">
+            <span class="brand-mark" aria-hidden="true">⬢</span>
+            <span class="brand-title">online-tools</span>
+        </div>
+        <p class="brand-subtitle">Schnelle, statische Helfer für Entwickler – ohne Server</p>
+    </div>
+
+    <div class="header-right">
+        <label class="search" for="toolSearch">
+            <span class="sr-only">Tools durchsuchen</span>
+            <input id="toolSearch" type="search" inputmode="search" autocomplete="off"
+                   placeholder="Tool suchen… (z.B. base64, regex, cron)" />
+            <span class="search-hint" aria-hidden="true">Ctrl/⌘ K</span>
+        </label>
+
+        <button id="themeToggle" class="btn" type="button" aria-pressed="false">
+            <span class="btn-icon" aria-hidden="true">🌓</span>
+            <span class="btn-label">Theme</span>
+        </button>
+
+        <button id="copyLink" class="btn" type="button">
+            <span class="btn-icon" aria-hidden="true">🔗</span>
+            <span class="btn-label">Link</span>
+        </button>
+    </div>
+</header>
+
+<div class="layout">
+    <nav class="sidebar" aria-label="Tool-Navigation">
+        <h2 class="sidebar-title">Tools</h2>
+
+        <ul id="toolNav" class="nav-list">
+            <li><a class="nav-link" href="#tool-base64" data-tool="base64">Base64</a></li>
+            <li><a class="nav-link" href="#tool-regex" data-tool="regex">Regex</a></li>
+            <li><a class="nav-link" href="#tool-cron" data-tool="cron">Cron</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <p class="muted">
+                Tastatur: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> Suche · <kbd>Esc</kbd> Reset
+            </p>
+        </div>
+    </nav>
+
+    <main id="main" class="content" role="main" tabindex="-1">
+        <div id="announcer" class="sr-only" aria-live="polite"></div>
+
+        <!-- TOOL: Base64 -->
+        <section class="tool" id="tool-base64" data-name="Base64" data-tags="base64 encode decode">
+            <header class="tool-header">
+                <h1>Base64</h1>
+                <p class="muted">Text Base64-kodieren oder dekodieren (UTF-8).</p>
+            </header>
+
+            <div class="grid">
+                <div class="panel">
+                    <label for="b64Input">Eingabe</label>
+                    <textarea id="b64Input" rows="8" spellcheck="false"
+                              placeholder="Text oder Base64 hier einfügen…"></textarea>
+
+                    <div class="row">
+                        <button class="btn primary" id="b64Encode" type="button">Kodieren</button>
+                        <button class="btn" id="b64Decode" type="button">Dekodieren</button>
+                        <button class="btn" id="b64Swap" type="button">↔ Tauschen</button>
+                        <button class="btn" id="b64Clear" type="button">Leeren</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="row space-between">
+                        <label for="b64Output">Ausgabe</label>
+                        <button class="btn" id="b64Copy" type="button">Kopieren</button>
+                    </div>
+                    <textarea id="b64Output" rows="8" spellcheck="false" readonly
+                              placeholder="Ergebnis…"></textarea>
+
+                    <p class="hint" id="b64Status" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOOL: Regex -->
+        <section class="tool" id="tool-regex" data-name="Regex" data-tags="regex tester match javascript">
+            <header class="tool-header">
+                <h1>Regex Checker</h1>
+                <p class="muted">JavaScript-RegEx testen (inkl. Flags) und Treffer markieren.</p>
+            </header>
+
+            <div class="grid">
+                <div class="panel">
+                    <label for="rxPattern">Pattern</label>
+                    <input id="rxPattern" type="text" spellcheck="false"
+                           placeholder="z.B. \\b\\w+@\\w+\\.\\w+\\b" />
+
+                    <div class="row">
+                        <fieldset class="flags" aria-label="Regex Flags">
+                            <legend class="sr-only">Flags</legend>
+                            <label><input type="checkbox" id="rxFlagG" /> g</label>
+                            <label><input type="checkbox" id="rxFlagI" /> i</label>
+                            <label><input type="checkbox" id="rxFlagM" /> m</label>
+                            <label><input type="checkbox" id="rxFlagS" /> s</label>
+                            <label><input type="checkbox" id="rxFlagU" /> u</label>
+                            <label><input type="checkbox" id="rxFlagY" /> y</label>
+                        </fieldset>
+
+                        <button class="btn primary" id="rxRun" type="button">Prüfen</button>
+                        <button class="btn" id="rxClear" type="button">Leeren</button>
+                    </div>
+
+                    <label for="rxText">Text</label>
+                    <textarea id="rxText" rows="10" spellcheck="false"
+                              placeholder="Text zum Testen…"></textarea>
+                </div>
+
+                <div class="panel">
+                    <div class="row space-between">
+                        <h2 class="panel-title">Ergebnis</h2>
+                        <button class="btn" id="rxCopyMatches" type="button">Matches kopieren</button>
+                    </div>
+
+                    <div class="result" id="rxResult" role="region" aria-label="Regex Ergebnis" tabindex="0">
+                        <p class="muted">Noch nichts ausgeführt.</p>
+                    </div>
+
+                    <p class="hint" id="rxStatus" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOOL: Cron -->
+        <section class="tool" id="tool-cron" data-name="Cron" data-tags="cron schedule linux quartz">
+            <header class="tool-header">
+                <h1>Cron Erklärer</h1>
+                <p class="muted">Cron-Ausdruck grob interpretieren (5-Feld: min hour dom mon dow).</p>
+            </header>
+
+            <div class="grid">
+                <div class="panel">
+                    <label for="cronExpr">Cron Ausdruck</label>
+                    <input id="cronExpr" type="text" spellcheck="false"
+                           placeholder="z.B. */15 9-17 * * 1-5" />
+
+                    <div class="row">
+                        <button class="btn primary" id="cronExplain" type="button">Erklären</button>
+                        <button class="btn" id="cronExamples" type="button">Beispiele</button>
+                        <button class="btn" id="cronClear" type="button">Leeren</button>
+                    </div>
+
+                    <details class="details">
+                        <summary>Hinweis</summary>
+                        <p class="muted">
+                            Diese Minimalversion ist bewusst leichtgewichtig. Wenn du später “echte” Cron-Semantik willst,
+                            kannst du eine Library per CDN einbinden (z.B. cronstrue) und hier einhängen.
+                        </p>
+                    </details>
+                </div>
+
+                <div class="panel">
+                    <h2 class="panel-title">Erklärung</h2>
+                    <div class="result" id="cronResult" role="region" aria-label="Cron Erklärung" tabindex="0">
+                        <p class="muted">Gib einen Ausdruck ein und klicke “Erklären”.</p>
+                    </div>
+                    <p class="hint" id="cronStatus" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="site-footer" role="contentinfo">
+            <p class="muted">
+                Lokal nutzbar, keine Daten werden gesendet. <span aria-hidden="true">✅</span>
+            </p>
+        </footer>
+    </main>
+</div>
+</body>
+</html>
