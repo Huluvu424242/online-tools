@@ -281,55 +281,6 @@ function initRegex() {
         }
     }
 
-    function quantifierDepthScore(p) {
-        // Rough "star height" heuristic: nested quantifiers are suspicious.
-        // Not a full parser. We approximate using patterns that commonly lead to backtracking.
-        let score = 0;
-
-        // Nested quantifiers: ( ... + ... )+ , ( ... * ... )+, ( ... {m,n} ... )+
-        const nested = /(\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\))\s*(?:[+*]|\{\d+(?:,\d*)?\})/g;
-        if (nested.test(p)) score += 3;
-
-        // Repetition of wildcard-ish patterns: (.*)+ or (.+)+ or (?:.*){...}
-        const dotStarRepeat = /\((?:\?:)?(?:[^()\\]|\\.)*\.\*(?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d+(?:,\d*)?\})/;
-        if (dotStarRepeat.test(p)) score += 3;
-
-        // Multiple quantifiers close together: e.g. .*.*  or \w+.*+ (approx)
-        const manyQuant = /(?:[+*]|\{\d+(?:,\d*)?\}).*(?:[+*]|\{\d+(?:,\d*)?\})/;
-        if (manyQuant.test(p)) score += 1;
-
-        return score;
-    }
-
-    function hasRepeatedAlternation(p) {
-        // (a|ab)+  or (foo|bar)* etc.
-        const altRepeated = /\((?:[^()\\]|\\.)*\|(?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d+(?:,\d*)?\})/;
-        return altRepeated.test(p);
-    }
-
-    function hasPrefixOverlapInAlternation(p) {
-        // Naively find simple alternations like (a|ab|abc)+ (no nested parens)
-        // and check if any alternative is a prefix of another -> classic backtracking risk.
-        const groupAlt = /\(([^()]*\|[^()]*)\)\s*(?:[+*]|\{\d+(?:,\d*)?\})/g;
-        let m;
-        while ((m = groupAlt.exec(p)) !== null) {
-            const body = m[1];
-            const alts = body.split("|").map(s => s.trim()).filter(Boolean);
-            // Keep only "simple-ish" alternatives (avoid meta-chars to reduce false alarms)
-            const simple = alts.filter(a => /^[a-zA-Z0-9_\-\\]+$/.test(a));
-            for (let i = 0; i < simple.length; i++) {
-                for (let j = 0; j < simple.length; j++) {
-                    if (i === j) continue;
-                    const A = simple[i];
-                    const B = simple[j];
-                    if (A && B && (A !== B) && (A.startsWith(B) || B.startsWith(A))) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
 
     // safe-regex einmal laden (cached Promise)
     const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
