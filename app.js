@@ -330,38 +330,73 @@ function initRegex() {
         return false;
     }
 
-    function analyzeCatastrophicBacktrackingRisk(patternText, flags) {
-        // Heuristic classification.
-        // Reasoning: catastrophic backtracking typically appears with ambiguous repetition:
-        // nested quantifiers or overlapping alternation with repetition. :contentReference[oaicite:1]{index=1}
-        const p = patternText;
+    // Einmal laden (cachen)
+    const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0"); // stable version
 
-        // Quick sanity: if it uses lookbehind etc. we still can rate; just be cautious.
-        let score = 0;
-
-        score += quantifierDepthScore(p);
-        if (hasRepeatedAlternation(p)) score += 2;
-        if (hasPrefixOverlapInAlternation(p)) score += 2;
-
-        // If pattern is anchored and simple, reduce slightly (weak heuristic)
-        if (/^\^/.test(p) && /\$$/.test(p)) score -= 1;
-
-        // 'g' doesn't change vulnerability, but we accept flags param for future extensions
-        const classification =
-            score >= 4 ? "warn" :
-                score >= 2 ? "warn" : // keep conservative: show "potentially vulnerable"
-                    "safe";
-
-        if (classification === "warn") {
+    async function analyzeCatastrophicBacktrackingRisk(patternText /*, flags */) {
+        // 1) safe-regex (lokal)
+        let safeRegex;
+        try {
+            const mod = await safeRegexModule;
+            safeRegex = mod?.default ?? mod;
+        } catch (e) {
             return {
                 classification: "warn",
-                message: "Potenziell verwundbar (möglicher ReDoS / Backtracking)"
+                message: "safe-regex: konnte nicht geladen werden"
             };
         }
-        return {
-            classification: "safe",
-            message: "Kein offensichtliches Backtracking-Risiko erkannt"
-        };
+
+        const safeOk = safeRegex(patternText); // boolean
+        if (!safeOk) {
+            return {
+                classification: "warn",
+                message: "safe-regex: potenziell gefährlich (Backtracking möglich)"
+            };
+        }
+
+        // 2) vuln-regex-detector (remote lookup, entspricht dem Cache-Server-API)
+        // API lt. Repo: POST https://toybox.cs.vt.edu:8000/api/lookup  {pattern, language, requestType}
+        // Ergebnis: SAFE | VULNERABLE | UNKNOWN | INVALID
+        // :contentReference[oaicite:3]{index=3}
+        let data;
+        try {
+            const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    pattern: patternText,
+                    language: "javascript",
+                    requestType: "LOOKUP_ONLY"
+                })
+            });
+
+            if (!resp.ok) {
+                return { classification: "warn", message: `vuln-regex-detector: HTTP ${resp.status}` };
+            }
+            data = await resp.json();
+        } catch (e) {
+            return { classification: "warn", message: "vuln-regex-detector: nicht erreichbar (Netzwerk)" };
+        }
+
+        // Robust: result kann "UNKNOWN" sein oder ein Objekt mit result.result
+        const r = (typeof data?.result === "string")
+            ? data.result
+            : (data?.result?.result ?? data?.result?.result?.result);
+
+        if (r === "SAFE") {
+            return { classification: "safe", message: "OK (safe-regex + vuln-regex-detector: SAFE)" };
+        }
+
+        if (r === "VULNERABLE") {
+            return { classification: "warn", message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)" };
+        }
+
+        if (r === "INVALID") {
+            return { classification: "warn", message: "vuln-regex-detector: INVALID (Regex ungültig)" };
+        }
+
+        // UNKNOWN oder alles andere -> NICHT ok (deine Regel: nur ok wenn beide ok)
+        return { classification: "warn", message: `vuln-regex-detector: ${r ?? "UNKNOWN"}` };
     }
 
     function renderMatches(regex, srcText) {
@@ -401,24 +436,31 @@ function initRegex() {
         return { matches };
     }
 
-    runBtn.addEventListener("click", () => {
+    runBtn.addEventListener("click", async () => {
         const p = pattern.value;
         const t = text.value;
 
         if (!p) {
             setStatus("Bitte ein Pattern eingeben.", true);
             result.innerHTML = `<p class="muted">Noch nichts ausgeführt.</p>`;
+            setSafety("neutral", "Noch nicht geprüft.");
             return;
         }
 
+        // Safety zuerst: “prüfe…”
+        setSafety("neutral", "Prüfe…");
+
+        // Flags wie gehabt
+        const flags = getFlags();
+
+        // 1) Safety-Check (async)
+        const risk = await analyzeCatastrophicBacktrackingRisk(p, flags);
+        setSafety(risk.classification, risk.message);
+
+        // 2) Danach normaler Regex-Run (wie vorher)
         try {
-            const flags = getFlags();
-            // NEU: Safety-Analyse (Heuristik)
-            const risk = analyzeCatastrophicBacktrackingRisk(p, flags);
-            setSafety(risk.classification, risk.message);
             const rx = new RegExp(p, flags);
             const { matches } = renderMatches(rx, t);
-
             setStatus(`OK. Flags: ${flags || "(keine)"} · Treffer: ${matches.length}`);
             setAnnounce(`Regex geprüft. Treffer: ${matches.length}`);
         } catch (e) {
@@ -540,7 +582,7 @@ function initCron() {
 
     clearBtn.addEventListener("click", () => {
         expr.value = "";
-        result.innerHTML = `<p class="muted">Gib einen Ausdruck ein und klicke “Erklären”.</p>`;
+        result.innerHTML = `<p class="muted">Gib einen Ausdruck ein und klicke „Erklären“.</p>`;
         setStatus("Geleert.");
     });
 }
