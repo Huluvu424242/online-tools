@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="de">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light dark" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"/>
     <title>online-tools</title>
-    <meta name="description" content="Statische Online-Tools für Entwickler: Base64, Regex, Cron, u.v.m." />
+    <meta name="description" content="Statische Online-Tools für Entwickler: Base64, Regex, Cron, u.v.m."/>
 
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css"/>
     <script defer src="app.js"></script>
 </head>
 
@@ -16,18 +16,26 @@
 
 <header class="site-header" role="banner">
     <div class="header-left">
-        <div class="brand" aria-label="online-tools">
-            <span class="brand-mark" aria-hidden="true">⬢</span>
-            <span class="brand-title">online-tools</span>
+        <div class="brand-texts">
+            <div class="brand" aria-label="online-tools">
+                <span class="brand-mark" aria-hidden="true">⬢</span>
+                <span class="brand-title">online-tools</span>
+            </div>
+            <p class="brand-subtitle">Schnelle, statische Helfer für Entwickler – ohne Server</p>
         </div>
-        <p class="brand-subtitle">Schnelle, statische Helfer für Entwickler – ohne Server</p>
+
+        <img src="PoweredByKI.png"
+             alt="Powered by KI"
+             class="brand-powered"
+             loading="lazy"
+        />
     </div>
 
     <div class="header-right">
         <label class="search" for="toolSearch">
             <span class="sr-only">Tools durchsuchen</span>
             <input id="toolSearch" type="search" inputmode="search" autocomplete="off"
-                   placeholder="Tool suchen… (z.B. base64, regex, cron)" />
+                   placeholder="Tool suchen… (z.B. base64, regex, cron)"/>
             <span class="search-hint" aria-hidden="true">Ctrl/⌘ K</span>
         </label>
 
@@ -47,11 +55,7 @@
     <nav class="sidebar" aria-label="Tool-Navigation">
         <h2 class="sidebar-title">Tools</h2>
 
-        <ul id="toolNav" class="nav-list">
-            <li><a class="nav-link" href="#tool-base64" data-tool="base64">Base64</a></li>
-            <li><a class="nav-link" href="#tool-regex" data-tool="regex">Regex</a></li>
-            <li><a class="nav-link" href="#tool-cron" data-tool="cron">Cron</a></li>
-        </ul>
+        <ul id="toolNav" class="nav-list"></ul>
 
         <div class="sidebar-footer">
             <p class="muted">
@@ -63,8 +67,49 @@
     <main id="main" class="content" role="main" tabindex="-1">
         <div id="announcer" class="sr-only" aria-live="polite"></div>
 
+        <!-- TOOL: Cron -->
+        <section class="tool" id="tool-cron" data-name="Cron" data-nav="Cron Erklärer"
+                 data-tags="cron schedule linux quartz">
+            <header class="tool-header">
+                <h1>Cron Erklärer</h1>
+                <p class="muted">Cron-Ausdruck grob interpretieren (5-Feld: min hour dom mon dow).</p>
+            </header>
+
+            <div class="grid">
+                <div class="panel">
+                    <label for="cronExpr">Cron Ausdruck</label>
+                    <input id="cronExpr" type="text" spellcheck="false"
+                           placeholder="z.B. */15 9-17 * * 1-5"/>
+
+                    <div class="row">
+                        <button class="btn primary" id="cronExplain" type="button">Erklären</button>
+                        <button class="btn" id="cronExamples" type="button">Beispiele</button>
+                        <button class="btn" id="cronClear" type="button">Leeren</button>
+                    </div>
+
+                    <details class="details">
+                        <summary>Hinweis</summary>
+                        <p class="muted">
+                            Diese Minimalversion ist bewusst leichtgewichtig. Wenn du später “echte” Cron-Semantik
+                            willst,
+                            kannst du eine Library per CDN einbinden (z.B. cronstrue) und hier einhängen.
+                        </p>
+                    </details>
+                </div>
+
+                <div class="panel">
+                    <h2 class="panel-title">Erklärung</h2>
+                    <div class="result" id="cronResult" role="region" aria-label="Cron Erklärung" tabindex="0">
+                        <p class="muted">Gib einen Ausdruck ein und klicke “Erklären”.</p>
+                    </div>
+                    <p class="hint" id="cronStatus" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </section>
+
         <!-- TOOL: Base64 -->
-        <section class="tool" id="tool-base64" data-name="Base64" data-tags="base64 encode decode">
+        <section class="tool" id="tool-base64" data-name="Base64" data-nav="Base64 Codierer"
+                 data-tags="base64 encode decode">
             <header class="tool-header">
                 <h1>Base64</h1>
                 <p class="muted">Text Base64-kodieren oder dekodieren (UTF-8).</p>
@@ -98,7 +143,8 @@
         </section>
 
         <!-- TOOL: Regex -->
-        <section class="tool" id="tool-regex" data-name="Regex" data-tags="regex tester match javascript">
+        <section class="tool" id="tool-regex" data-name="Regex" data-nav="Regex Checker"
+                 data-tags="regex tester match javascript">
             <header class="tool-header">
                 <h1>Regex Checker</h1>
                 <p class="muted">JavaScript-RegEx testen (inkl. Flags) und Treffer markieren.</p>
@@ -108,20 +154,20 @@
                 <div class="panel">
                     <label for="rxPattern">Pattern</label>
                     <input id="rxPattern" type="text" spellcheck="false"
-                           placeholder="z.B. \\b\\w+@\\w+\\.\\w+\\b" />
+                           placeholder="z.B. \\b\\w+@\\w+\\.\\w+\\b"/>
 
                     <div class="row">
                         <fieldset class="flags" aria-label="Regex Flags">
                             <legend class="sr-only">Flags</legend>
-                            <label><input type="checkbox" id="rxFlagG" /> g</label>
-                            <label><input type="checkbox" id="rxFlagI" /> i</label>
-                            <label><input type="checkbox" id="rxFlagM" /> m</label>
-                            <label><input type="checkbox" id="rxFlagS" /> s</label>
-                            <label><input type="checkbox" id="rxFlagU" /> u</label>
-                            <label><input type="checkbox" id="rxFlagY" /> y</label>
+                            <label><input type="checkbox" id="rxFlagG"/> g</label>
+                            <label><input type="checkbox" id="rxFlagI"/> i</label>
+                            <label><input type="checkbox" id="rxFlagM"/> m</label>
+                            <label><input type="checkbox" id="rxFlagS"/> s</label>
+                            <label><input type="checkbox" id="rxFlagU"/> u</label>
+                            <label><input type="checkbox" id="rxFlagY"/> y</label>
                         </fieldset>
                         <label class="consent">
-                            <input type="checkbox" id="rxRemoteConsent" />
+                            <input type="checkbox" id="rxRemoteConsent"/>
                             Remote-Check erlauben (Regex wird an externen Server gesendet)
                         </label>
                         <button class="btn primary" id="rxRun" type="button">Prüfen</button>
@@ -153,40 +199,51 @@
             </div>
         </section>
 
-        <!-- TOOL: Cron -->
-        <section class="tool" id="tool-cron" data-name="Cron" data-tags="cron schedule linux quartz">
+        <!-- TOOL: Regex Vergleich -->
+        <section class="tool" id="tool-regex-compare" data-name="Regex Vergleich" data-nav="Regex Vergleich"
+                 data-tags="regex vergleich equal equivalence dfa nfa">
             <header class="tool-header">
-                <h1>Cron Erklärer</h1>
-                <p class="muted">Cron-Ausdruck grob interpretieren (5-Feld: min hour dom mon dow).</p>
+                <h1>Regex Vergleich</h1>
+                <p class="muted">
+                    Vergleicht zwei Regexe innerhalb einer eingeschränkten regulären Teilmenge.
+                </p>
             </header>
+
+            <div class="notice" role="note" aria-label="Einschränkungen des Regex Vergleichs">
+                <strong>Hinweis:</strong>
+                Dieser Vergleich funktioniert nur für eine eingeschränkte reguläre Teilmenge.
+                Nicht unterstützt werden insbesondere Gruppen, Backreferences, Lookahead/Lookbehind
+                und andere Konstrukte, die über klassische reguläre Sprachen hinausgehen oder
+                stark engine-spezifisch sind.
+            </div>
 
             <div class="grid">
                 <div class="panel">
-                    <label for="cronExpr">Cron Ausdruck</label>
-                    <input id="cronExpr" type="text" spellcheck="false"
-                           placeholder="z.B. */15 9-17 * * 1-5" />
+                    <label for="rcPatternA">Regex A</label>
+                    <input id="rcPatternA" type="text" spellcheck="false" placeholder="z.B. ab*c"/>
+
+                    <label for="rcPatternB">Regex B</label>
+                    <input id="rcPatternB" type="text" spellcheck="false" placeholder="z.B. ac|abc|abbc"/>
 
                     <div class="row">
-                        <button class="btn primary" id="cronExplain" type="button">Erklären</button>
-                        <button class="btn" id="cronExamples" type="button">Beispiele</button>
-                        <button class="btn" id="cronClear" type="button">Leeren</button>
+                        <button class="btn primary" id="rcCompare" type="button">Vergleichen</button>
+                        <button class="btn" id="rcSwap" type="button">↔ Tauschen</button>
+                        <button class="btn" id="rcClear" type="button">Leeren</button>
                     </div>
-
-                    <details class="details">
-                        <summary>Hinweis</summary>
-                        <p class="muted">
-                            Diese Minimalversion ist bewusst leichtgewichtig. Wenn du später “echte” Cron-Semantik willst,
-                            kannst du eine Library per CDN einbinden (z.B. cronstrue) und hier einhängen.
-                        </p>
-                    </details>
                 </div>
 
                 <div class="panel">
-                    <h2 class="panel-title">Erklärung</h2>
-                    <div class="result" id="cronResult" role="region" aria-label="Cron Erklärung" tabindex="0">
-                        <p class="muted">Gib einen Ausdruck ein und klicke “Erklären”.</p>
+                    <div class="flat-result" id="rcStatusBox" role="status" aria-live="polite">
+                        <span class="flat-label">Status:</span>
+                        <span class="flat-value muted">Noch nicht geprüft.</span>
                     </div>
-                    <p class="hint" id="cronStatus" role="status" aria-live="polite"></p>
+
+                    <h2 class="panel-title">Ergebnis</h2>
+                    <div class="result" id="rcResult" role="region" aria-label="Regex Vergleich Ergebnis" tabindex="0">
+                        <p class="muted">Gib zwei Regexe ein und klicke „Vergleichen“.</p>
+                    </div>
+
+                    <p class="hint" id="rcHint" role="status" aria-live="polite"></p>
                 </div>
             </div>
         </section>

@@ -52,6 +52,44 @@ function initTheme() {
     });
 }
 
+function initToolNav() {
+    const nav = $("#toolNav");
+    const sections = $$(".tool");
+
+    if (!nav || sections.length === 0) return;
+
+    nav.innerHTML = "";
+
+    for (const section of sections) {
+        if (section.dataset.navHidden === "true") continue;
+
+        const id = section.id;
+        if (!id) continue;
+
+        const label =
+            section.dataset.nav ||
+            section.dataset.name ||
+            $("h1", section)?.textContent?.trim() ||
+            id;
+
+        const toolName =
+            (section.dataset.name || label || id)
+                .toLowerCase()
+                .replace(/\s+/g, "-");
+
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+
+        a.className = "nav-link";
+        a.href = `#${id}`;
+        a.dataset.tool = toolName;
+        a.textContent = label;
+
+        li.appendChild(a);
+        nav.appendChild(li);
+    }
+}
+
 /* ========= Navigation state (aria-current) ========= */
 function initNavHighlight() {
     const links = $$(".nav-link");
@@ -520,6 +558,206 @@ function initRegex() {
     });
 }
 
+function initRegexCompare() {
+    const patternA = $("#rcPatternA");
+    const patternB = $("#rcPatternB");
+    const compareBtn = $("#rcCompare");
+    const swapBtn = $("#rcSwap");
+    const clearBtn = $("#rcClear");
+    const result = $("#rcResult");
+    const hint = $("#rcHint");
+    const statusBox = $("#rcStatusBox");
+
+    if (!patternA || !patternB || !compareBtn || !swapBtn || !clearBtn || !result || !hint || !statusBox) return;
+
+    function setStatus(state, message) {
+        statusBox.classList.remove("flat-safe", "flat-warn", "flat-neutral");
+        if (state === "safe") statusBox.classList.add("flat-safe");
+        else if (state === "warn") statusBox.classList.add("flat-warn");
+        else statusBox.classList.add("flat-neutral");
+
+        const valueEl = $(".flat-value", statusBox);
+        if (valueEl) valueEl.textContent = message;
+    }
+
+    function setHint(message, isError = false) {
+        hint.textContent = message;
+        hint.style.color = isError ? "var(--danger)" : "var(--muted)";
+    }
+
+    function containsUnsupportedConstructs(pattern) {
+        const findings = [];
+
+        if (/[()]/.test(pattern)) findings.push("Gruppen mit ( )");
+        if (/\\[1-9]/.test(pattern)) findings.push("Backreferences");
+        if (/\(\?[:=!<]/.test(pattern)) findings.push("Spezialgruppen / Lookaround");
+        if (/\(\?<=|\(\?<!/.test(pattern)) findings.push("Lookbehind");
+        if (/\(\?=|\(\?!/.test(pattern)) findings.push("Lookahead");
+
+        return findings;
+    }
+
+    function normalizeSimpleRegex(pattern) {
+        return pattern.replace(/\s+/g, "");
+    }
+
+    function generateSampleWords(alphabet, maxLen) {
+        const words = [""];
+        for (let len = 1; len <= maxLen; len++) {
+            const next = [];
+            for (const prefix of words.filter(w => w.length === len - 1)) {
+                for (const ch of alphabet) {
+                    next.push(prefix + ch);
+                }
+            }
+            words.push(...next);
+        }
+        return words;
+    }
+
+    function extractAlphabet(...patterns) {
+        const chars = new Set();
+        for (const pattern of patterns) {
+            for (const ch of pattern) {
+                if (/^[a-zA-Z0-9]$/.test(ch)) chars.add(ch);
+            }
+        }
+        if (chars.size === 0) {
+            chars.add("a");
+            chars.add("b");
+        }
+        return [...chars].slice(0, 6);
+    }
+
+    function compareBySamples(a, b) {
+        const alphabet = extractAlphabet(a, b);
+        const samples = generateSampleWords(alphabet, 4);
+
+        let rxA;
+        let rxB;
+
+        try {
+            rxA = new RegExp(`^(?:${a})$`);
+            rxB = new RegExp(`^(?:${b})$`);
+        } catch (e) {
+            return {
+                ok: false,
+                type: "invalid",
+                message: `Ungültiges Regex: ${e.message}`
+            };
+        }
+
+        for (const sample of samples) {
+            const aMatch = rxA.test(sample);
+            const bMatch = rxB.test(sample);
+            if (aMatch !== bMatch) {
+                return {
+                    ok: true,
+                    equal: false,
+                    witness: sample
+                };
+            }
+        }
+
+        return {
+            ok: true,
+            equal: true,
+            witness: null
+        };
+    }
+
+    compareBtn.addEventListener("click", () => {
+        const aRaw = patternA.value.trim();
+        const bRaw = patternB.value.trim();
+
+        if (!aRaw || !bRaw) {
+            setStatus("warn", "Bitte beide Regexe eingeben.");
+            setHint("Es fehlen Eingaben.", true);
+            result.innerHTML = `<p class="muted">Bitte Regex A und Regex B befüllen.</p>`;
+            return;
+        }
+
+        const unsupportedA = containsUnsupportedConstructs(aRaw);
+        const unsupportedB = containsUnsupportedConstructs(bRaw);
+
+        if (unsupportedA.length || unsupportedB.length) {
+            const parts = [];
+            if (unsupportedA.length) parts.push(`Regex A enthält: ${unsupportedA.join(", ")}`);
+            if (unsupportedB.length) parts.push(`Regex B enthält: ${unsupportedB.join(", ")}`);
+
+            setStatus("warn", "Nicht unterstützte Konstrukte gefunden.");
+            setHint("Vergleich abgebrochen.", true);
+            result.innerHTML = `
+        <p><strong>Vergleich nicht möglich.</strong></p>
+        <p>${escapeHtml(parts.join(" | "))}</p>
+        <p class="muted">
+          Unterstützt wird nur eine eingeschränkte reguläre Teilmenge ohne Gruppen und ohne engine-spezifische Erweiterungen.
+        </p>
+      `;
+            return;
+        }
+
+        const a = normalizeSimpleRegex(aRaw);
+        const b = normalizeSimpleRegex(bRaw);
+
+        if (a === b) {
+            setStatus("safe", "Regexe sind textuell identisch.");
+            setHint("Direkte Übereinstimmung.");
+            result.innerHTML = `
+        <p><strong>Ergebnis:</strong> Die Regexe sind nach Normalisierung identisch.</p>
+        <p class="muted">Das ist ein starker Hinweis auf Gleichheit, aber noch kein formaler Beweis für beliebige Engines.</p>
+      `;
+            return;
+        }
+
+        const cmp = compareBySamples(a, b);
+
+        if (!cmp.ok) {
+            setStatus("warn", "Vergleich fehlgeschlagen.");
+            setHint(cmp.message, true);
+            result.innerHTML = `<p>${escapeHtml(cmp.message)}</p>`;
+            return;
+        }
+
+        if (!cmp.equal) {
+            const shownWitness = cmp.witness === "" ? "ε (leeres Wort)" : escapeHtml(cmp.witness);
+            setStatus("warn", "Regexe unterscheiden sich.");
+            setHint("Es wurde ein Gegenbeispiel gefunden.");
+            result.innerHTML = `
+        <p><strong>Ergebnis:</strong> Die Regexe sind nicht gleichwertig.</p>
+        <p>Gefundenes Gegenbeispiel: <code>${shownWitness}</code></p>
+        <p class="muted">Für dieses Wort liefern die beiden Regexe unterschiedliche Ergebnisse.</p>
+      `;
+            return;
+        }
+
+        setStatus("neutral", "Keine Unterschiede in der Stichprobe gefunden.");
+        setHint("Das ist nur ein heuristischer Vergleich.");
+        result.innerHTML = `
+      <p><strong>Vorläufiges Ergebnis:</strong> In der geprüften Stichprobe wurden keine Unterschiede gefunden.</p>
+      <p class="muted">
+        Das ist noch kein formaler Beweis. Für einen echten Äquivalenzbeweis müsste man die Regexe in endliche Automaten überführen und diese vergleichen.
+      </p>
+    `;
+    });
+
+    swapBtn.addEventListener("click", () => {
+        const tmp = patternA.value;
+        patternA.value = patternB.value;
+        patternB.value = tmp;
+        setStatus("neutral", "Regexe getauscht.");
+        setHint("");
+    });
+
+    clearBtn.addEventListener("click", () => {
+        patternA.value = "";
+        patternB.value = "";
+        setStatus("neutral", "Noch nicht geprüft.");
+        setHint("");
+        result.innerHTML = `<p class="muted">Gib zwei Regexe ein und klicke „Vergleichen“.</p>`;
+    });
+}
+
 /* ========= Tool: Cron (minimal, pragmatic) ========= */
 function initCron() {
     const expr = $("#cronExpr");
@@ -608,11 +846,13 @@ function initCron() {
 /* ========= Boot ========= */
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
+    initToolNav();
     initNavHighlight();
     initToolSearch();
     initShareLink();
 
+    initCron();
     initBase64();
     initRegex();
-    initCron();
+    initRegexCompare();
 });
