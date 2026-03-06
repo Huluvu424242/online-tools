@@ -324,7 +324,7 @@ kbd {
     font-size: 1rem;
 }
 
-label {
+label:not(.search):not(.consent) {
     display: block;
     font-weight: 700;
     margin: 8px 0 6px;
@@ -389,12 +389,12 @@ textarea:focus, input:focus {
 .space-between {
     justify-content: space-between;
 }
-
 .btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     padding: 9px 12px;
+    min-height: 42px;   /* gleiche Höhe wie Suchfeld */
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--surface);
