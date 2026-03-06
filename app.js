@@ -61,6 +61,8 @@ function initToolNav() {
     nav.innerHTML = "";
 
     for (const section of sections) {
+        if (section.dataset.navHidden === "true") continue;
+
         const id = section.id;
         if (!id) continue;
 
@@ -71,7 +73,7 @@ function initToolNav() {
             id;
 
         const toolName =
-            (section.dataset.name || id)
+            (section.dataset.name || label || id)
                 .toLowerCase()
                 .replace(/\s+/g, "-");
 
