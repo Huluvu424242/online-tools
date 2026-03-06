@@ -48,10 +48,10 @@
         <h2 class="sidebar-title">Tools</h2>
 
         <ul id="toolNav" class="nav-list">
+            <li><a class="nav-link" href="#tool-cron" data-tool="cron">Cron</a></li>
             <li><a class="nav-link" href="#tool-base64" data-tool="base64">Base64</a></li>
             <li><a class="nav-link" href="#tool-regex" data-tool="regex">Regex</a></li>
             <li><a class="nav-link" href="#tool-regex-compare" data-tool="regex-compare">Regex Vergleich</a></li>
-            <li><a class="nav-link" href="#tool-cron" data-tool="cron">Cron</a></li>
         </ul>
 
         <div class="sidebar-footer">
@@ -63,6 +63,44 @@
 
     <main id="main" class="content" role="main" tabindex="-1">
         <div id="announcer" class="sr-only" aria-live="polite"></div>
+
+        <!-- TOOL: Cron -->
+        <section class="tool" id="tool-cron" data-name="Cron" data-tags="cron schedule linux quartz">
+            <header class="tool-header">
+                <h1>Cron Erklärer</h1>
+                <p class="muted">Cron-Ausdruck grob interpretieren (5-Feld: min hour dom mon dow).</p>
+            </header>
+
+            <div class="grid">
+                <div class="panel">
+                    <label for="cronExpr">Cron Ausdruck</label>
+                    <input id="cronExpr" type="text" spellcheck="false"
+                           placeholder="z.B. */15 9-17 * * 1-5" />
+
+                    <div class="row">
+                        <button class="btn primary" id="cronExplain" type="button">Erklären</button>
+                        <button class="btn" id="cronExamples" type="button">Beispiele</button>
+                        <button class="btn" id="cronClear" type="button">Leeren</button>
+                    </div>
+
+                    <details class="details">
+                        <summary>Hinweis</summary>
+                        <p class="muted">
+                            Diese Minimalversion ist bewusst leichtgewichtig. Wenn du später “echte” Cron-Semantik willst,
+                            kannst du eine Library per CDN einbinden (z.B. cronstrue) und hier einhängen.
+                        </p>
+                    </details>
+                </div>
+
+                <div class="panel">
+                    <h2 class="panel-title">Erklärung</h2>
+                    <div class="result" id="cronResult" role="region" aria-label="Cron Erklärung" tabindex="0">
+                        <p class="muted">Gib einen Ausdruck ein und klicke “Erklären”.</p>
+                    </div>
+                    <p class="hint" id="cronStatus" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </section>
 
         <!-- TOOL: Base64 -->
         <section class="tool" id="tool-base64" data-name="Base64" data-tags="base64 encode decode">
@@ -198,44 +236,6 @@
                     </div>
 
                     <p class="hint" id="rcHint" role="status" aria-live="polite"></p>
-                </div>
-            </div>
-        </section>
-
-        <!-- TOOL: Cron -->
-        <section class="tool" id="tool-cron" data-name="Cron" data-tags="cron schedule linux quartz">
-            <header class="tool-header">
-                <h1>Cron Erklärer</h1>
-                <p class="muted">Cron-Ausdruck grob interpretieren (5-Feld: min hour dom mon dow).</p>
-            </header>
-
-            <div class="grid">
-                <div class="panel">
-                    <label for="cronExpr">Cron Ausdruck</label>
-                    <input id="cronExpr" type="text" spellcheck="false"
-                           placeholder="z.B. */15 9-17 * * 1-5" />
-
-                    <div class="row">
-                        <button class="btn primary" id="cronExplain" type="button">Erklären</button>
-                        <button class="btn" id="cronExamples" type="button">Beispiele</button>
-                        <button class="btn" id="cronClear" type="button">Leeren</button>
-                    </div>
-
-                    <details class="details">
-                        <summary>Hinweis</summary>
-                        <p class="muted">
-                            Diese Minimalversion ist bewusst leichtgewichtig. Wenn du später “echte” Cron-Semantik willst,
-                            kannst du eine Library per CDN einbinden (z.B. cronstrue) und hier einhängen.
-                        </p>
-                    </details>
-                </div>
-
-                <div class="panel">
-                    <h2 class="panel-title">Erklärung</h2>
-                    <div class="result" id="cronResult" role="region" aria-label="Cron Erklärung" tabindex="0">
-                        <p class="muted">Gib einen Ausdruck ein und klicke “Erklären”.</p>
-                    </div>
-                    <p class="hint" id="cronStatus" role="status" aria-live="polite"></p>
                 </div>
             </div>
         </section>

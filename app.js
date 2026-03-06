@@ -812,8 +812,8 @@ document.addEventListener("DOMContentLoaded", () => {
     initToolSearch();
     initShareLink();
 
+    initCron();
     initBase64();
     initRegex();
     initRegexCompare();
-    initCron();
 });
