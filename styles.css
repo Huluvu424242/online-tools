@@ -96,9 +96,6 @@ a:hover {
     gap: 16px;
     align-items: flex-end;
     justify-content: space-between;
-
-    padding: 18px 18px 14px 0px; /* oben größer als unten */
-
     background: linear-gradient(180deg, var(--surface), rgba(0, 0, 0, 0));
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
@@ -152,6 +149,7 @@ a:hover {
     display: block;
     flex: 0 0 auto;
     align-self: flex-end;   /* ← wichtig */
+    margin-bottom: 2px;
 }
 
 .header-right {
