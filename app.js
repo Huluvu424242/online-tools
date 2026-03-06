@@ -52,6 +52,42 @@ function initTheme() {
     });
 }
 
+function initToolNav() {
+    const nav = $("#toolNav");
+    const sections = $$(".tool");
+
+    if (!nav || sections.length === 0) return;
+
+    nav.innerHTML = "";
+
+    for (const section of sections) {
+        const id = section.id;
+        if (!id) continue;
+
+        const label =
+            section.dataset.nav ||
+            section.dataset.name ||
+            $("h1", section)?.textContent?.trim() ||
+            id;
+
+        const toolName =
+            (section.dataset.name || id)
+                .toLowerCase()
+                .replace(/\s+/g, "-");
+
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+
+        a.className = "nav-link";
+        a.href = `#${id}`;
+        a.dataset.tool = toolName;
+        a.textContent = label;
+
+        li.appendChild(a);
+        nav.appendChild(li);
+    }
+}
+
 /* ========= Navigation state (aria-current) ========= */
 function initNavHighlight() {
     const links = $$(".nav-link");
@@ -808,6 +844,7 @@ function initCron() {
 /* ========= Boot ========= */
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
+    initToolNav();
     initNavHighlight();
     initToolSearch();
     initShareLink();

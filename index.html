@@ -47,12 +47,7 @@
     <nav class="sidebar" aria-label="Tool-Navigation">
         <h2 class="sidebar-title">Tools</h2>
 
-        <ul id="toolNav" class="nav-list">
-            <li><a class="nav-link" href="#tool-cron" data-tool="cron">Cron</a></li>
-            <li><a class="nav-link" href="#tool-base64" data-tool="base64">Base64</a></li>
-            <li><a class="nav-link" href="#tool-regex" data-tool="regex">Regex</a></li>
-            <li><a class="nav-link" href="#tool-regex-compare" data-tool="regex-compare">Regex Vergleich</a></li>
-        </ul>
+        <ul id="toolNav" class="nav-list"></ul>
 
         <div class="sidebar-footer">
             <p class="muted">
@@ -65,7 +60,7 @@
         <div id="announcer" class="sr-only" aria-live="polite"></div>
 
         <!-- TOOL: Cron -->
-        <section class="tool" id="tool-cron" data-name="Cron" data-tags="cron schedule linux quartz">
+        <section class="tool" id="tool-cron" data-name="Cron" data-nav="Cron Erklärer" data-tags="cron schedule linux quartz">
             <header class="tool-header">
                 <h1>Cron Erklärer</h1>
                 <p class="muted">Cron-Ausdruck grob interpretieren (5-Feld: min hour dom mon dow).</p>
@@ -103,7 +98,7 @@
         </section>
 
         <!-- TOOL: Base64 -->
-        <section class="tool" id="tool-base64" data-name="Base64" data-tags="base64 encode decode">
+        <section class="tool" id="tool-base64" data-name="Base64" data-nav="Base64 Codierer" data-tags="base64 encode decode">
             <header class="tool-header">
                 <h1>Base64</h1>
                 <p class="muted">Text Base64-kodieren oder dekodieren (UTF-8).</p>
@@ -137,7 +132,7 @@
         </section>
 
         <!-- TOOL: Regex -->
-        <section class="tool" id="tool-regex" data-name="Regex" data-tags="regex tester match javascript">
+        <section class="tool" id="tool-regex" data-name="Regex" data-nav="Regex Checker" data-tags="regex tester match javascript">
             <header class="tool-header">
                 <h1>Regex Checker</h1>
                 <p class="muted">JavaScript-RegEx testen (inkl. Flags) und Treffer markieren.</p>
@@ -193,7 +188,7 @@
         </section>
 
         <!-- TOOL: Regex Vergleich -->
-        <section class="tool" id="tool-regex-compare" data-name="Regex Vergleich" data-tags="regex vergleich equal equivalence dfa nfa">
+        <section class="tool" id="tool-regex-compare" data-name="Regex Vergleich" data-nav="Regex Vergleich" data-tags="regex vergleich equal equivalence dfa nfa">
             <header class="tool-header">
                 <h1>Regex Vergleich</h1>
                 <p class="muted">
