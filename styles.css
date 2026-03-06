@@ -149,6 +149,7 @@ a:hover {
     width: auto;
     display: block;
     flex: 0 0 auto;
+    align-self: flex-end;   /* ← wichtig */
 }
 
 .header-right {
