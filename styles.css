@@ -96,7 +96,9 @@ a:hover {
     gap: 16px;
     align-items: flex-end;
     justify-content: space-between;
-    padding: 14px 18px;
+
+    padding: 18px 18px 14px 0px; /* oben größer als unten */
+
     background: linear-gradient(180deg, var(--surface), rgba(0, 0, 0, 0));
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
