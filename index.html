@@ -50,6 +50,7 @@
         <ul id="toolNav" class="nav-list">
             <li><a class="nav-link" href="#tool-base64" data-tool="base64">Base64</a></li>
             <li><a class="nav-link" href="#tool-regex" data-tool="regex">Regex</a></li>
+            <li><a class="nav-link" href="#tool-regex-compare" data-tool="regex-compare">Regex Vergleich</a></li>
             <li><a class="nav-link" href="#tool-cron" data-tool="cron">Cron</a></li>
         </ul>
 
@@ -149,6 +150,54 @@
                     </div>
 
                     <p class="hint" id="rxStatus" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOOL: Regex Vergleich -->
+        <section class="tool" id="tool-regex-compare" data-name="Regex Vergleich" data-tags="regex vergleich equal equivalence dfa nfa">
+            <header class="tool-header">
+                <h1>Regex Vergleich</h1>
+                <p class="muted">
+                    Vergleicht zwei Regexe innerhalb einer eingeschränkten regulären Teilmenge.
+                </p>
+            </header>
+
+            <div class="notice" role="note" aria-label="Einschränkungen des Regex Vergleichs">
+                <strong>Hinweis:</strong>
+                Dieser Vergleich funktioniert nur für eine eingeschränkte reguläre Teilmenge.
+                Nicht unterstützt werden insbesondere Gruppen, Backreferences, Lookahead/Lookbehind
+                und andere Konstrukte, die über klassische reguläre Sprachen hinausgehen oder
+                stark engine-spezifisch sind.
+            </div>
+
+            <div class="grid">
+                <div class="panel">
+                    <label for="rcPatternA">Regex A</label>
+                    <input id="rcPatternA" type="text" spellcheck="false" placeholder="z.B. ab*c" />
+
+                    <label for="rcPatternB">Regex B</label>
+                    <input id="rcPatternB" type="text" spellcheck="false" placeholder="z.B. ac|abc|abbc" />
+
+                    <div class="row">
+                        <button class="btn primary" id="rcCompare" type="button">Vergleichen</button>
+                        <button class="btn" id="rcSwap" type="button">↔ Tauschen</button>
+                        <button class="btn" id="rcClear" type="button">Leeren</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="flat-result" id="rcStatusBox" role="status" aria-live="polite">
+                        <span class="flat-label">Status:</span>
+                        <span class="flat-value muted">Noch nicht geprüft.</span>
+                    </div>
+
+                    <h2 class="panel-title">Ergebnis</h2>
+                    <div class="result" id="rcResult" role="region" aria-label="Regex Vergleich Ergebnis" tabindex="0">
+                        <p class="muted">Gib zwei Regexe ein und klicke „Vergleichen“.</p>
+                    </div>
+
+                    <p class="hint" id="rcHint" role="status" aria-live="polite"></p>
                 </div>
             </div>
         </section>

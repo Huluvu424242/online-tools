@@ -233,6 +233,17 @@ textarea:focus, input:focus { box-shadow: var(--focus); border-color: var(--acce
     height: 18px;
 }
 
+.notice {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--muted);
+}
+
+.flat-neutral .flat-value { color: var(--muted); }
+
 .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
 .space-between { justify-content: space-between; }
 
