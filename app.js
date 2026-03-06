@@ -617,16 +617,41 @@ function initRegexCompare() {
 
     function extractAlphabet(...patterns) {
         const chars = new Set();
+
         for (const pattern of patterns) {
             for (const ch of pattern) {
-                if (/^[a-zA-Z0-9]$/.test(ch)) chars.add(ch);
+                // Buchstaben/Ziffern
+                if (/^[a-zA-Z0-9]$/.test(ch)) {
+                    chars.add(ch);
+                    continue;
+                }
+
+                // wichtige Literal-Zeichen mit aufnehmen
+                if (/^[-_.:/]$/.test(ch)) {
+                    chars.add(ch);
+                }
+            }
+
+            // typische Repräsentanten für Regex-Klassen ergänzen
+            if (pattern.includes("\\d") || pattern.includes("[0-9]")) {
+                chars.add("0");
+            }
+            if (pattern.includes("\\w")) {
+                chars.add("a");
+                chars.add("0");
+                chars.add("_");
+            }
+            if (pattern.includes("\\s")) {
+                chars.add(" ");
             }
         }
+
         if (chars.size === 0) {
             chars.add("a");
             chars.add("b");
         }
-        return [...chars].slice(0, 6);
+
+        return [...chars].slice(0, 8);
     }
 
     function compareBySamples(a, b) {
