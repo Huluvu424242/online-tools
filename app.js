@@ -601,6 +601,55 @@ function initRegexCompare() {
         return pattern.replace(/\s+/g, "");
     }
 
+    function generateTargetedSamples(pattern) {
+        const samples = new Set([""]);
+
+        // einfache Heuristik: typische Ersatzzeichen
+        const digit = "0";
+        const word = "a";
+        const space = " ";
+
+        // sehr grobe Kandidaten aus dem Pattern ableiten
+        let base = pattern;
+
+        // Klassen grob durch Repräsentanten ersetzen
+        base = base.replace(/\[0-9\]\+/g, digit);
+        base = base.replace(/\[0-9\]\*/g, "");
+        base = base.replace(/\[0-9\]\?/g, "");
+        base = base.replace(/\[0-9\]/g, digit);
+
+        base = base.replace(/\\d\+/g, digit);
+        base = base.replace(/\\d\*/g, "");
+        base = base.replace(/\\d\?/g, "");
+        base = base.replace(/\\d/g, digit);
+
+        base = base.replace(/\\w\+/g, word);
+        base = base.replace(/\\w\*/g, "");
+        base = base.replace(/\\w\?/g, "");
+        base = base.replace(/\\w/g, word);
+
+        base = base.replace(/\\s\+/g, space);
+        base = base.replace(/\\s\*/g, "");
+        base = base.replace(/\\s\?/g, "");
+        base = base.replace(/\\s/g, space);
+
+        // Quantifier für einzelne Literale vereinfachen
+        base = base.replace(/(.)\+/g, "$1");
+        base = base.replace(/(.)\*/g, "");
+        base = base.replace(/(.)\?/g, "");
+
+        // Escapes für Literale vereinfachen
+        base = base.replace(/\\([\-.[\]{}()/+*?^$|\\])/g, "$1");
+
+        samples.add(base);
+
+        // Varianten mit einem Element mehr
+        samples.add(base.replace(/$/, "0"));
+        samples.add(base.replace(/$/, "a"));
+
+        return [...samples];
+    }
+
     function generateSampleWords(alphabet, maxLen) {
         const words = [""];
         for (let len = 1; len <= maxLen; len++) {
@@ -656,7 +705,11 @@ function initRegexCompare() {
 
     function compareBySamples(a, b) {
         const alphabet = extractAlphabet(a, b);
-        const samples = generateSampleWords(alphabet, 4);
+        const samples = new Set([
+            ...generateSampleWords(alphabet, 4),
+            ...generateTargetedSamples(a),
+            ...generateTargetedSamples(b),
+        ]);
 
         let rxA;
         let rxB;
