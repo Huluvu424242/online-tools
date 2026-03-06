@@ -613,10 +613,10 @@ function initRegexCompare() {
         let base = pattern;
 
         // Klassen grob durch Repräsentanten ersetzen
-        base = base.replace(/\[0-9\]\+/g, digit);
-        base = base.replace(/\[0-9\]\*/g, "");
-        base = base.replace(/\[0-9\]\?/g, "");
-        base = base.replace(/\[0-9\]/g, digit);
+        base = base.replace(/\[0-9]\+/g, digit);
+        base = base.replace(/\[0-9]\*/g, "");
+        base = base.replace(/\[0-9]\?/g, "");
+        base = base.replace(/\[0-9]/g, digit);
 
         base = base.replace(/\\d\+/g, digit);
         base = base.replace(/\\d\*/g, "");
