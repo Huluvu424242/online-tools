@@ -342,26 +342,50 @@ label:not(.search):not(.consent) {
     margin: 8px 0 6px;
 }
 
-.options {
-    margin-top: 10px;
+.option-group {
+    margin: 10px 0 0;
     padding: 10px;
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--surface);
-    display: grid;
-    gap: 6px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.options legend {
+.option-group legend {
+    padding: 0 6px;
     font-weight: 700;
     color: var(--muted);
-    padding: 0 6px;
 }
 
-.options label:last-child {
+.option-group label {
+    margin: 0;
+    font-weight: 700;
+    color: var(--muted);
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.option-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.option-group-stack {
+    display: grid;
+    gap: 8px;
+}
+
+.option-group-stack label {
+    width: 100%;
+}
+
+.consent-warn {
     color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
 }
-
 input[type="text"], input[type="search"], textarea {
     width: 100%;
     border-radius: 12px;
