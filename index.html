@@ -8,6 +8,10 @@
     <meta name="description" content="Statische Online-Tools für Entwickler: Base64, Regex, Cron, u.v.m."/>
 
     <link rel="stylesheet" href="styles.css"/>
+    <script defer src="tools/cron-erklaerer.js"></script>
+    <script defer src="tools/base64.js"></script>
+    <script defer src="tools/regex-checker.js"></script>
+    <script defer src="tools/regex-compare.js"></script>
     <script defer src="app.js"></script>
 </head>
 
@@ -156,20 +160,36 @@
                     <input id="rxPattern" type="text" spellcheck="false"
                            placeholder="z.B. \\b\\w+@\\w+\\.\\w+\\b"/>
 
-                    <div class="row">
-                        <fieldset class="flags" aria-label="Regex Flags">
-                            <legend class="sr-only">Flags</legend>
-                            <label><input type="checkbox" id="rxFlagG"/> g</label>
-                            <label><input type="checkbox" id="rxFlagI"/> i</label>
-                            <label><input type="checkbox" id="rxFlagM"/> m</label>
-                            <label><input type="checkbox" id="rxFlagS"/> s</label>
-                            <label><input type="checkbox" id="rxFlagU"/> u</label>
-                            <label><input type="checkbox" id="rxFlagY"/> y</label>
-                        </fieldset>
-                        <label class="consent">
-                            <input type="checkbox" id="rxRemoteConsent"/>
-                            Remote-Check erlauben (Regex wird an externen Server gesendet)
+                    <fieldset class="option-group" aria-label="Regex Flags">
+                        <legend>Flags</legend>
+                        <label><input type="checkbox" id="rxFlagG"/> g</label>
+                        <label><input type="checkbox" id="rxFlagI"/> i</label>
+                        <label><input type="checkbox" id="rxFlagM"/> m</label>
+                        <label><input type="checkbox" id="rxFlagS"/> s</label>
+                        <label><input type="checkbox" id="rxFlagU"/> u</label>
+                        <label><input type="checkbox" id="rxFlagY"/> y</label>
+                    </fieldset>
+
+                    <fieldset class="option-group option-group-stack" aria-label="Analyseoptionen">
+                        <legend>Analyseoptionen</legend>
+
+                        <label class="consent" for="rxCheckSafeRegex">
+                            <input type="checkbox" id="rxCheckSafeRegex" checked disabled>
+                            safe-regex lokal ausführen (immer aktiv)
                         </label>
+
+                        <label class="consent" for="rxCheckRedos">
+                            <input type="checkbox" id="rxCheckRedos">
+                            ReDoS-Prüfung mit redos-detector zusätzlich ausführen
+                        </label>
+
+                        <label class="consent consent-warn" id="rxRemoteLabel">
+                            <input type="checkbox" id="rxRemoteConsent">
+                            Remote-Check erlauben
+                        </label>
+                    </fieldset>
+
+                    <div class="row">
                         <button class="btn primary" id="rxRun" type="button">Prüfen</button>
                         <button class="btn" id="rxClear" type="button">Leeren</button>
                     </div>
@@ -205,16 +225,28 @@
             <header class="tool-header">
                 <h1>Regex Vergleich</h1>
                 <p class="muted">
-                    Vergleicht zwei Regexe innerhalb einer eingeschränkten regulären Teilmenge.
+                    Vergleicht zwei RegEx innerhalb einer eingeschränkten regulären Teilmenge.<br/>
+                    Beispielsweise um zu prüfen ob eine über
+                    <a href="https://ivanzuzak.info/noam/webapps/regex_simplifier/"
+                       class="tool-link"
+                       target="_blank"
+                       rel="noopener"
+                    >RegEx-Simplifier</a>
+                    vereinfachte RegEx, noch exakt die gleichen Muster erkennt.
                 </p>
             </header>
 
             <div class="notice" role="note" aria-label="Einschränkungen des Regex Vergleichs">
                 <strong>Hinweis:</strong>
                 Dieser Vergleich funktioniert nur für eine eingeschränkte reguläre Teilmenge.
-                Nicht unterstützt werden insbesondere Gruppen, Backreferences, Lookahead/Lookbehind
-                und andere Konstrukte, die über klassische reguläre Sprachen hinausgehen oder
-                stark engine-spezifisch sind.
+                Unterstützt werden Literale, Zeichenklassen, Klammern zur Gruppierung,
+                Alternation (<code>|</code>) sowie <code>*</code>, <code>+</code>, <code>?</code> und <code>.</code>
+                (Punkt).
+                Der . bedeutet in diesem Tool: ein beliebiges ASCII-Zeichen außer Zeilenumbruch.
+                <br/><br/>
+                &#x26A0;
+                Nicht unterstützt werden insbesondere Backreferences, Lookahead/Lookbehind,
+                negierte Klassen, <code>{m,n}</code> und andere engine-spezifische Konstrukte.
             </div>
 
             <div class="grid">
