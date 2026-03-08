@@ -36,7 +36,11 @@ function initRegex() {
         if (state === "warn") safety.classList.add("flat-warn");
     }
 
-
+    function safetyIcon(state) {
+        if (state === "safe") return "✔";
+        if (state === "warn") return "⚠";
+        return "•";
+    }
     // 1) safe-regex einmal laden (cached Promise)
     const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
 
@@ -295,11 +299,12 @@ function initRegex() {
         }
 
         valueEl.innerHTML = checks.map((check) => `
-        <div class="safety-line safety-${check.state}">
-            <span class="safety-name">${escapeHtml(check.name)}:</span>
-            <span class="safety-message">${escapeHtml(check.message)}</span>
-        </div>
-    `).join("");
+            <div class="safety-line safety-${check.state}">
+                <span class="safety-icon">${safetyIcon(check.state)}</span>
+                <span class="safety-name">${escapeHtml(check.name)}:</span>
+                <span class="safety-message">${escapeHtml(check.message)}</span>
+            </div>
+        `).join("");
     }
 
     function renderMatches(regex, srcText) {
