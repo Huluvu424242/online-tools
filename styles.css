@@ -307,6 +307,16 @@ kbd {
     margin: 0;
 }
 
+.tool-link {
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.tool-link:hover {
+    text-decoration: underline;
+}
+
 .grid {
     margin-top: 14px;
     display: grid;
