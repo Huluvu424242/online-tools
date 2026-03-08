@@ -382,7 +382,7 @@ label:not(.search):not(.consent) {
     width: 100%;
 }
 
-.consent-warn {
+label.consent-warn {
     color: var(--danger);
     border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
 }
