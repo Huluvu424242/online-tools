@@ -19,11 +19,12 @@ function initRegex() {
     const safety = $("#rxSafety");
     const remoteConsent = $("#rxRemoteConsent");
     const runRedosCheck = $("#rxCheckRedos");
-
-    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck) return;
-
     const label = $("#rxRemoteLabel");
-    if (label && !label.dataset.serverInjected) {
+
+    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck || !label) return;
+
+
+    if (!label.dataset.serverInjected) {
         label.append(` (Regex wird an ${REMOTE_REGEX_SERVER} gesendet)`);
         label.dataset.serverInjected = "true";
     }
