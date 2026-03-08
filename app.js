@@ -284,8 +284,9 @@ function initRegex() {
     const copyBtn = $("#rxCopyMatches");
     const safety = $("#rxSafety");
     const remoteConsent = $("#rxRemoteConsent");
+    const runRedosCheck =$("#rcCheckRedos");
 
-    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent) return;
+    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck ) return;
 
     const flagEls = {
         g: $("#rxFlagG"),
@@ -335,7 +336,7 @@ function initRegex() {
      * Rückgabe:
      * { classification: "safe" | "warn" | "neutral", message: string }
      */
-    async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRemote) {
+    async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRedos, allowRemote) {
         // -------------------------
         // 1) safe-regex (lokal)
         // -------------------------
@@ -509,8 +510,9 @@ function initRegex() {
 
         const flags = getFlags();
         const allowRemote = remoteConsent.checked;
+        const allowRedos = runRedosCheck.checked;
 
-        const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRemote);
+        const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRedos, allowRemote);
         setSafety(risk.classification, `Geprüft  ${p} und ermittelt: ` + risk.message);
 
         try {

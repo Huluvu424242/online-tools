@@ -156,21 +156,30 @@
                     <label for="rxPattern">Pattern</label>
                     <input id="rxPattern" type="text" spellcheck="false"
                            placeholder="z.B. \\b\\w+@\\w+\\.\\w+\\b"/>
+                    <fieldset class="flags" aria-label="Regex Flags">
+                        <legend class="sr-only">Flags</legend>
+                        <label><input type="checkbox" id="rxFlagG"/> g</label>
+                        <label><input type="checkbox" id="rxFlagI"/> i</label>
+                        <label><input type="checkbox" id="rxFlagM"/> m</label>
+                        <label><input type="checkbox" id="rxFlagS"/> s</label>
+                        <label><input type="checkbox" id="rxFlagU"/> u</label>
+                        <label><input type="checkbox" id="rxFlagY"/> y</label>
+                    </fieldset>
+                    <fieldset class="options" aria-label="Analyse Optionen">
+                        <legend>Analyse</legend>
 
-                    <div class="row">
-                        <fieldset class="flags" aria-label="Regex Flags">
-                            <legend class="sr-only">Flags</legend>
-                            <label><input type="checkbox" id="rxFlagG"/> g</label>
-                            <label><input type="checkbox" id="rxFlagI"/> i</label>
-                            <label><input type="checkbox" id="rxFlagM"/> m</label>
-                            <label><input type="checkbox" id="rxFlagS"/> s</label>
-                            <label><input type="checkbox" id="rxFlagU"/> u</label>
-                            <label><input type="checkbox" id="rxFlagY"/> y</label>
-                        </fieldset>
                         <label class="consent">
-                            <input type="checkbox" id="rxRemoteConsent"/>
+                            <input type="checkbox" id="rcCheckRedos">
+                            ReDoS-Prüfung mit redos-detector zusätzlich ausführen
+                        </label>
+
+                        <label class="consent">
+                            <input type="checkbox" id="rxRemoteConsent">
                             Remote-Check erlauben (Regex wird an externen Server gesendet)
                         </label>
+
+                    </fieldset>
+                    <div class="row">
                         <button class="btn primary" id="rxRun" type="button">Prüfen</button>
                         <button class="btn" id="rxClear" type="button">Leeren</button>
                     </div>
