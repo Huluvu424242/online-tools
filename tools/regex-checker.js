@@ -9,7 +9,7 @@ function initRegex() {
     const copyBtn = $("#rxCopyMatches");
     const safety = $("#rxSafety");
     const remoteConsent = $("#rxRemoteConsent");
-    const runRedosCheck = $("#rcCheckRedos");
+    const runRedosCheck = $("#rxCheckRedos");
 
     if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck) return;
 

@@ -173,12 +173,17 @@
                     <fieldset class="option-group option-group-stack" aria-label="Analyseoptionen">
                         <legend>Analyseoptionen</legend>
 
-                        <label class="consent">
-                            <input type="checkbox" id="rcCheckRedos">
+                        <label class="consent" for="rxCheckSafeRegex">
+                            <input type="checkbox" id="rxCheckSafeRegex" checked disabled>
+                            safe-regex lokal ausführen (immer aktiv)
+                        </label>
+
+                        <label class="consent" for="rxCheckRedos">
+                            <input type="checkbox" id="rxCheckRedos">
                             ReDoS-Prüfung mit redos-detector zusätzlich ausführen
                         </label>
 
-                        <label class="consent consent-warn">
+                        <label class="consent consent-warn" for="rxRemoteConsent">
                             <input type="checkbox" id="rxRemoteConsent">
                             Remote-Check erlauben (Regex wird an externen Server gesendet)
                         </label>
