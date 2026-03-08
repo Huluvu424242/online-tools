@@ -342,6 +342,26 @@ label:not(.search):not(.consent) {
     margin: 8px 0 6px;
 }
 
+.options {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: grid;
+    gap: 6px;
+}
+
+.options legend {
+    font-weight: 700;
+    color: var(--muted);
+    padding: 0 6px;
+}
+
+.options label:last-child {
+    color: var(--danger);
+}
+
 input[type="text"], input[type="search"], textarea {
     width: 100%;
     border-radius: 12px;
