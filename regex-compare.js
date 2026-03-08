@@ -1,5 +1,8 @@
 
 const ASCII = Array.from({ length: 128 }, (_, i) => String.fromCharCode(i));
+const DOT_CHARS = new Set(
+    ASCII.filter((ch) => ch !== "\n" && ch !== "\r")
+);
 
 function parse(input) {
     let i = 0;
@@ -59,6 +62,10 @@ function parse(input) {
         }
         if (c === "[") return parseClass();
         if (c === "\\") return parseEscape();
+        if (c === ".") {
+            eat();
+            return { t: "set", chars: new Set(DOT_CHARS) };
+        }
         if (!c) throw new Error(`Unerwartetes Ende an Position ${i}`);
         eat();
         return { t: "set", chars: new Set([c]) };
