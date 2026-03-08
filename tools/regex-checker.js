@@ -23,8 +23,9 @@ function initRegex() {
     if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck) return;
 
     const label = $("#rxRemoteLabel");
-    if (label) {
+    if (label && !label.dataset.serverInjected) {
         label.append(` (Regex wird an ${REMOTE_REGEX_SERVER} gesendet)`);
+        label.dataset.serverInjected = "true";
     }
 
     const flagEls = {
