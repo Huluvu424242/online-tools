@@ -1,6 +1,5 @@
-
-const PRINTABLE_ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(i + 32));
-const FULL_ASCII = Array.from({ length: 128 }, (_, i) => String.fromCharCode(i));
+const PRINTABLE_ASCII = Array.from({length: 95}, (_, i) => String.fromCharCode(i + 32));
+const FULL_ASCII = Array.from({length: 128}, (_, i) => String.fromCharCode(i));
 const DOT_CHARS = new Set(
     FULL_ASCII.filter((ch) => ch !== "\n" && ch !== "\r")
 );
@@ -18,7 +17,7 @@ function parse(input) {
         let node = parseConcat();
         while (peek() === "|") {
             eat();
-            node = { t: "alt", parts: [node, parseConcat()] };
+            node = {t: "alt", parts: [node, parseConcat()]};
         }
         return node;
     }
@@ -28,9 +27,9 @@ function parse(input) {
         while (i < input.length && peek() !== ")" && peek() !== "|") {
             parts.push(parseQuantified());
         }
-        if (parts.length === 0) return { t: "eps" };
+        if (parts.length === 0) return {t: "eps"};
         if (parts.length === 1) return parts[0];
-        return { t: "seq", parts };
+        return {t: "seq", parts};
     }
 
     function parseQuantified() {
@@ -39,13 +38,13 @@ function parse(input) {
             const c = peek();
             if (c === "*") {
                 eat();
-                node = { t: "star", expr: node };
+                node = {t: "star", expr: node};
             } else if (c === "+") {
                 eat();
-                node = { t: "seq", parts: [node, { t: "star", expr: deepClone(node) }] };
+                node = {t: "seq", parts: [node, {t: "star", expr: deepClone(node)}]};
             } else if (c === "?") {
                 eat();
-                node = { t: "alt", parts: [node, { t: "eps" }] };
+                node = {t: "alt", parts: [node, {t: "eps"}]};
             } else {
                 break;
             }
@@ -65,11 +64,11 @@ function parse(input) {
         if (c === "\\") return parseEscape();
         if (c === ".") {
             eat();
-            return { t: "set", chars: new Set(DOT_CHARS) };
+            return {t: "set", chars: new Set(DOT_CHARS)};
         }
         if (!c) throw new Error(`Unerwartetes Ende an Position ${i}`);
         eat();
-        return { t: "set", chars: new Set([c]) };
+        return {t: "set", chars: new Set([c])};
     }
 
     function parseEscape() {
@@ -79,7 +78,7 @@ function parse(input) {
         if (c === "d") return charSet("0123456789");
         if (c === "w") return charSet("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
         if (c === "s") return charSet(" \t\r\n\f\v");
-        return { t: "set", chars: new Set([c]) };
+        return {t: "set", chars: new Set([c])};
     }
 
     function parseClass() {
@@ -114,7 +113,7 @@ function parse(input) {
                 }
             }
         }
-        return { t: "set", chars };
+        return {t: "set", chars};
     }
 
     function readClassChar() {
@@ -136,39 +135,49 @@ function parse(input) {
 }
 
 function charSet(chars) {
-    return { t: "set", chars: new Set(chars.split("")) };
+    return {t: "set", chars: new Set(chars.split(""))};
 }
 
 function nullable(r) {
     switch (r.t) {
-        case "empty": return false;
-        case "eps": return true;
-        case "set": return false;
-        case "alt": return r.parts.some(nullable);
-        case "seq": return r.parts.every(nullable);
-        case "star": return true;
-        default: throw new Error(`Unbekannter Knoten ${r.t}`);
+        case "empty":
+            return false;
+        case "eps":
+            return true;
+        case "set":
+            return false;
+        case "alt":
+            return r.parts.some(nullable);
+        case "seq":
+            return r.parts.every(nullable);
+        case "star":
+            return true;
+        default:
+            throw new Error(`Unbekannter Knoten ${r.t}`);
     }
 }
 
 function derive(r, ch) {
     switch (r.t) {
-        case "empty": return { t: "empty" };
-        case "eps": return { t: "empty" };
-        case "set": return r.chars.has(ch) ? { t: "eps" } : { t: "empty" };
+        case "empty":
+            return {t: "empty"};
+        case "eps":
+            return {t: "empty"};
+        case "set":
+            return r.chars.has(ch) ? {t: "eps"} : {t: "empty"};
         case "alt":
-            return simplify({ t: "alt", parts: r.parts.map((p) => derive(p, ch)) });
+            return simplify({t: "alt", parts: r.parts.map((p) => derive(p, ch))});
         case "seq": {
             const [first, ...rest] = r.parts;
-            const tail = rest.length === 0 ? { t: "eps" } : { t: "seq", parts: rest };
-            const left = simplify({ t: "seq", parts: [derive(first, ch), tail] });
+            const tail = rest.length === 0 ? {t: "eps"} : {t: "seq", parts: rest};
+            const left = simplify({t: "seq", parts: [derive(first, ch), tail]});
             if (nullable(first)) {
-                return simplify({ t: "alt", parts: [left, derive(tail, ch)] });
+                return simplify({t: "alt", parts: [left, derive(tail, ch)]});
             }
             return left;
         }
         case "star":
-            return simplify({ t: "seq", parts: [derive(r.expr, ch), r] });
+            return simplify({t: "seq", parts: [derive(r.expr, ch), r]});
         default:
             throw new Error(`Unbekannter Knoten ${r.t}`);
     }
@@ -184,28 +193,28 @@ function simplify(r) {
                 else flat.push(p);
             }
             const uniq = dedupe(flat);
-            if (uniq.length === 0) return { t: "empty" };
+            if (uniq.length === 0) return {t: "empty"};
             if (uniq.length === 1) return uniq[0];
             uniq.sort((a, b) => serialize(a).localeCompare(serialize(b)));
-            return { t: "alt", parts: uniq };
+            return {t: "alt", parts: uniq};
         }
         case "seq": {
             const flat = [];
             for (const p of r.parts.map(simplify)) {
-                if (p.t === "empty") return { t: "empty" };
+                if (p.t === "empty") return {t: "empty"};
                 if (p.t === "eps") continue;
                 if (p.t === "seq") flat.push(...p.parts);
                 else flat.push(p);
             }
-            if (flat.length === 0) return { t: "eps" };
+            if (flat.length === 0) return {t: "eps"};
             if (flat.length === 1) return flat[0];
-            return { t: "seq", parts: flat };
+            return {t: "seq", parts: flat};
         }
         case "star": {
             const inner = simplify(r.expr);
-            if (inner.t === "empty" || inner.t === "eps") return { t: "eps" };
+            if (inner.t === "empty" || inner.t === "eps") return {t: "eps"};
             if (inner.t === "star") return inner;
-            return { t: "star", expr: inner };
+            return {t: "star", expr: inner};
         }
         default:
             return r;
@@ -220,13 +229,20 @@ function dedupe(parts) {
 
 function serialize(r) {
     switch (r.t) {
-        case "empty": return "∅";
-        case "eps": return "ε";
-        case "set": return `[${[...r.chars].sort().map(escapeChar).join("")}]`;
-        case "alt": return `(${r.parts.map(serialize).join("|")})`;
-        case "seq": return `(${r.parts.map(serialize).join("")})`;
-        case "star": return `(${serialize(r.expr)})*`;
-        default: throw new Error(`Unbekannter Knoten ${r.t}`);
+        case "empty":
+            return "∅";
+        case "eps":
+            return "ε";
+        case "set":
+            return `[${[...r.chars].sort().map(escapeChar).join("")}]`;
+        case "alt":
+            return `(${r.parts.map(serialize).join("|")})`;
+        case "seq":
+            return `(${r.parts.map(serialize).join("")})`;
+        case "star":
+            return `(${serialize(r.expr)})*`;
+        default:
+            throw new Error(`Unbekannter Knoten ${r.t}`);
     }
 }
 
@@ -244,14 +260,14 @@ function deepClone(node) {
     switch (node.t) {
         case "empty":
         case "eps":
-            return { ...node };
+            return {...node};
         case "set":
-            return { t: "set", chars: new Set(node.chars) };
+            return {t: "set", chars: new Set(node.chars)};
         case "alt":
         case "seq":
-            return { t: node.t, parts: node.parts.map(deepClone) };
+            return {t: node.t, parts: node.parts.map(deepClone)};
         case "star":
-            return { t: "star", expr: deepClone(node.expr) };
+            return {t: "star", expr: deepClone(node.expr)};
         default:
             throw new Error(`Unbekannter Knoten ${node.t}`);
     }
@@ -339,20 +355,39 @@ function initRegexCompare() {
                 hint.textContent = "Kein Gegenbeispiel gefunden.";
             } else {
                 setStatus("error", "Regexe sind verschieden.");
-                const witness = comparison.witness === "" ? "ε (Leerstring)" : escapeVisible(comparison.witness);
+                const witnessRaw = comparison.witness;
+                const witness = witnessRaw === "" ? "ε (Leerstring)" : escapeVisible(witnessRaw);
+                const witnessLength = witnessRaw.length;
 
                 renderResult(`
-                    <p><strong>Ergebnis:</strong> Die beiden Regexe sind nicht äquivalent.</p>
-                    <p><strong>Gegenbeispiel:</strong> <code>${witness}</code></p>
-                    <p>
-                        <strong>Regex A akzeptiert:</strong> ${comparison.acceptsA ? "Ja" : "Nein"}<br>
-                        <strong>Regex B akzeptiert:</strong> ${comparison.acceptsB ? "Ja" : "Nein"}
-                    </p>
-                    <p><strong>Regex A:</strong> <code>${escapeHtml(a)}</code></p>
-                    <p><strong>Regex B:</strong> <code>${escapeHtml(b)}</code></p>
-                `);
+                        <p><strong>Ergebnis:</strong> Die beiden Regexe sind nicht äquivalent.</p>
+                    
+                        <p>
+                            <strong>Gegenbeispiel:</strong>
+                            <code>${witness}</code>
+                        </p>
+                    
+                        <p>
+                            <strong>Länge:</strong> ${witnessLength} Zeichen
+                        </p>
+                    
+                        <p>
+                            <strong>Regex A akzeptiert:</strong> ${comparison.acceptsA ? "Ja" : "Nein"}<br>
+                            <strong>Regex B akzeptiert:</strong> ${comparison.acceptsB ? "Ja" : "Nein"}
+                        </p>
+                    
+                        <hr>
+                    
+                        <p><strong>Regex A:</strong> <code>${escapeHtml(a)}</code></p>
+                        <p><strong>Regex B:</strong> <code>${escapeHtml(b)}</code></p>
+                        
+                        <p>
+                            <strong>Zeichenanalyse:</strong><br>
+                            ${describeChars(witnessRaw)}
+                        </p>
+                    `);
 
-                hint.textContent = "Das Gegenbeispiel wird von genau einem der beiden Ausdrücke akzeptiert.";
+                hint.textContent = "Das Gegenbeispiel wird von genau einem Regex akzeptiert und zeigt damit den Unterschied der Sprachen.";
             }
         } catch (error) {
             setStatus("error", "Fehler beim Vergleichen.");
@@ -361,6 +396,14 @@ function initRegexCompare() {
             `);
             hint.textContent = "Prüfe die Syntax und die unterstützte Teilmenge.";
         }
+
+        function describeChars(str) {
+            return [...str].map(c => {
+                const code = c.charCodeAt(0);
+                return `${escapeVisible(c)} (0x${code.toString(16).padStart(2,"0")})`;
+            }).join(", ");
+        }
+
     }
 
     compareBtn.addEventListener("click", compareNow);
@@ -411,11 +454,11 @@ class RegexCompare {
     static _compareWithAlphabet(astA, astB, alphabet) {
 
         const seen = new Set();
-        const queue = [{ a: astA, b: astB, witness: "" }];
+        const queue = [{a: astA, b: astB, witness: ""}];
 
         while (queue.length) {
 
-            const { a, b, witness } = queue.shift();
+            const {a, b, witness} = queue.shift();
             const key = `${serialize(a)}###${serialize(b)}`;
 
             if (seen.has(key)) {
@@ -450,7 +493,7 @@ class RegexCompare {
             }
         }
 
-        return { equal: true };
+        return {equal: true};
     }
 }
 
