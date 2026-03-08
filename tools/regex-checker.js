@@ -32,14 +32,15 @@ function initRegex() {
     function setSafety(state, message) {
         // state: "neutral" | "safe" | "warn"
         safety.classList.remove("flat-safe", "flat-warn");
-        // const valueEl = $(".flat-value", safety) || safety;
+
+        const valueEl = $(".flat-value", safety);
 
         if (state === "safe") safety.classList.add("flat-safe");
         if (state === "warn") safety.classList.add("flat-warn");
 
-        // If the markup exists:
-        if ($(".flat-value", safety)) {
-            $(".flat-value", safety).textContent = message;
+        if (valueEl) {
+            valueEl.textContent = message;
+            valueEl.classList.toggle("muted", state === "neutral");
         } else {
             safety.textContent = message;
         }
@@ -64,9 +65,7 @@ function initRegex() {
     async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRedos, allowRemote) {
         const messages = [];
 
-        // -------------------------
-        // 1) safe-regex (lokal, immer)
-        // -------------------------
+        // 1) safe-regex
         let safeRegex;
         try {
             const mod = await safeRegexModule;
@@ -97,9 +96,7 @@ function initRegex() {
 
         messages.push("safe-regex: unauffällig");
 
-        // -------------------------
-        // 2) redos-detector (lokal, optional)
-        // -------------------------
+        // 2) redos-detector
         if (allowRedos) {
             let isSafePattern;
             try {
@@ -150,15 +147,13 @@ function initRegex() {
             messages.push("redos-detector: übersprungen");
         }
 
-        // -------------------------
-        // 3) Remote (optional)
-        // -------------------------
+        // 3) Remote
         if (allowRemote) {
             let data;
             try {
                 const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
                     method: "POST",
-                    headers: {"Content-Type": "application/json"},
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         pattern: patternText,
                         language: "javascript",
@@ -208,9 +203,6 @@ function initRegex() {
             messages.push("Remote-Check: übersprungen");
         }
 
-        // -------------------------
-        // Alles ok
-        // -------------------------
         return {
             classification: "safe",
             message: messages.join(" · ")
@@ -265,20 +257,19 @@ function initRegex() {
             return;
         }
 
-        setSafety("neutral", `Prüfe: ${p}`);
-
         const flags = getFlags();
         const allowRemote = remoteConsent.checked;
         const allowRedos = runRedosCheck.checked;
 
+        setSafety("neutral", "Prüfung läuft …");
+
         const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRedos, allowRemote);
-        setSafety(risk.classification, `Geprüft  ${p} und ermittelt: ` + risk.message);
+        setSafety(risk.classification, risk.message);
 
         try {
             const rx = new RegExp(p, flags);
-            const {matches} = renderMatches(rx, t);
+            const { matches } = renderMatches(rx, t);
             setStatus(`OK. Flags: ${flags || "(keine)"} · Treffer: ${matches.length}`);
-            setAnnounce(`Regex geprüft. Treffer: ${matches.length}`);
         } catch (e) {
             setStatus(`Regex Fehler: ${e.message}`, true);
             result.innerHTML = `<p class="muted">Regex konnte nicht kompiliert werden.</p>`;
@@ -291,6 +282,7 @@ function initRegex() {
         result.innerHTML = `<p class="muted">Noch nichts ausgeführt.</p>`;
         setStatus("Geleert.");
         remoteConsent.checked = false;
+        runRedosCheck.checked = false;
         setSafety("neutral", "Noch nicht geprüft.");
     });
 
