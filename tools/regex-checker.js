@@ -261,18 +261,28 @@ function initRegex() {
         const allowRemote = remoteConsent.checked;
         const allowRedos = runRedosCheck.checked;
 
-        setSafety("neutral", "Prüfung läuft …");
+        let rx;
 
-        const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRedos, allowRemote);
-        setSafety(risk.classification, risk.message);
-
+        // 1) Regex sofort kompilieren und Treffer direkt anzeigen
         try {
-            const rx = new RegExp(p, flags);
+            rx = new RegExp(p, flags);
             const { matches } = renderMatches(rx, t);
             setStatus(`OK. Flags: ${flags || "(keine)"} · Treffer: ${matches.length}`);
         } catch (e) {
             setStatus(`Regex Fehler: ${e.message}`, true);
             result.innerHTML = `<p class="muted">Regex konnte nicht kompiliert werden.</p>`;
+            setSafety("neutral", "Nicht geprüft, da Regex ungültig ist.");
+            return;
+        }
+
+        // 2) Danach Sicherheitsprüfung
+        setSafety("neutral", "Sicherheitsprüfung läuft …");
+
+        try {
+            const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRedos, allowRemote);
+            setSafety(risk.classification, risk.message);
+        } catch (e) {
+            setSafety("warn", `Sicherheitsprüfung fehlgeschlagen (${e?.message || "Fehler"})`);
         }
     });
 
