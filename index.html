@@ -212,9 +212,10 @@
             <div class="notice" role="note" aria-label="Einschränkungen des Regex Vergleichs">
                 <strong>Hinweis:</strong>
                 Dieser Vergleich funktioniert nur für eine eingeschränkte reguläre Teilmenge.
-                Nicht unterstützt werden insbesondere Gruppen, Backreferences, Lookahead/Lookbehind
-                und andere Konstrukte, die über klassische reguläre Sprachen hinausgehen oder
-                stark engine-spezifisch sind.
+                Unterstützt werden Literale, Zeichenklassen, Klammern zur Gruppierung,
+                Alternation (<code>|</code>) sowie <code>*</code>, <code>+</code> und <code>?</code>.
+                Nicht unterstützt werden insbesondere Backreferences, Lookahead/Lookbehind,
+                negierte Klassen, <code>.</code>, <code>{m,n}</code> und andere engine-spezifische Konstrukte.
             </div>
 
             <div class="grid">
