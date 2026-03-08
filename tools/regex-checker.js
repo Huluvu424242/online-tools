@@ -1,5 +1,3 @@
-
-
 /* ========= Tool: Regex ========= */
 function initRegex() {
     const pattern = $("#rxPattern");
@@ -11,9 +9,9 @@ function initRegex() {
     const copyBtn = $("#rxCopyMatches");
     const safety = $("#rxSafety");
     const remoteConsent = $("#rxRemoteConsent");
-    const runRedosCheck =$("#rcCheckRedos");
+    const runRedosCheck = $("#rcCheckRedos");
 
-    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck ) return;
+    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck) return;
 
     const flagEls = {
         g: $("#rxFlagG"),
@@ -64,126 +62,160 @@ function initRegex() {
      * { classification: "safe" | "warn" | "neutral", message: string }
      */
     async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRedos, allowRemote) {
+        const messages = [];
+
         // -------------------------
-        // 1) safe-regex (lokal)
+        // 1) safe-regex (lokal, immer)
         // -------------------------
         let safeRegex;
         try {
             const mod = await safeRegexModule;
             safeRegex = mod.default || mod;
         } catch {
-            return {classification: "warn", message: "safe-regex: Bibliothek konnte nicht geladen werden"};
+            return {
+                classification: "warn",
+                message: "safe-regex: Bibliothek konnte nicht geladen werden"
+            };
         }
 
         let safeOk = false;
         try {
             safeOk = safeRegex(patternText);
         } catch {
-            return {classification: "warn", message: "safe-regex: Analyse fehlgeschlagen"};
+            return {
+                classification: "warn",
+                message: "safe-regex: Analyse fehlgeschlagen"
+            };
         }
 
         if (!safeOk) {
-            return {classification: "warn", message: "safe-regex: potenziell gefährlich (Backtracking möglich)"};
-        }
-
-        // -------------------------
-        // 2) redos-detector (lokal)
-        // -------------------------
-        let isSafePattern;
-        try {
-            const mod = await redosDetectorModule;
-            // esm-sh kann default oder named liefern
-            isSafePattern = mod.isSafePattern || mod.default?.isSafePattern || mod.default;
-        } catch {
-            return {classification: "warn", message: "redos-detector: Bibliothek konnte nicht geladen werden"};
-        }
-
-        // Flags in Optionen übersetzen (redos-detector akzeptiert diese Optionen) :contentReference[oaicite:4]{index=4}
-        const opts = {
-            caseInsensitive: flags.includes("i"),
-            unicode: flags.includes("u"),
-            dotAll: flags.includes("s"),
-            multiLine: flags.includes("m"),
-
-            // wichtig für UI: nicht ewig rechnen
-            timeout: 80,     // ms (klein halten, sonst UI zäh)
-            maxSteps: 20000, // Default lt. Doku; bleibt ok
-            maxScore: 200    // Default lt. Doku
-        };
-
-        let rd;
-        try {
-            rd = isSafePattern(patternText, opts);
-        } catch (e) {
             return {
                 classification: "warn",
-                message: `redos-detector: Analyse fehlgeschlagen (${e?.message || "Fehler"})`
+                message: "safe-regex: potenziell gefährlich (Backtracking möglich)"
             };
         }
 
-        if (!rd?.safe) {
-            const scoreText = rd?.score?.infinite
-                ? "Score: ∞"
-                : (typeof rd?.score?.value === "number" ? `Score: ${rd.score.value}` : "Score: ?");
-
-            const errText = rd?.error ? ` (${rd.error})` : "";
-            return {
-                classification: "warn",
-                message: `redos-detector: UNSAFE – ${scoreText}${errText}`
-            };
-        }
+        messages.push("safe-regex: unauffällig");
 
         // -------------------------
-        // 3) Remote (nur bei Opt-in)
+        // 2) redos-detector (lokal, optional)
         // -------------------------
-        if (!allowRemote) {
-            return {
-                classification: "safe",
-                message: "OK (lokal: safe-regex + redos-detector)"
-            };
-        }
-
-        let data;
-        try {
-            const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    pattern: patternText,
-                    language: "javascript",
-                    requestType: "LOOKUP_ONLY"
-                })
-            });
-
-            if (!resp.ok) {
-                return {classification: "warn", message: `vuln-regex-detector: HTTP ${resp.status}`};
+        if (allowRedos) {
+            let isSafePattern;
+            try {
+                const mod = await redosDetectorModule;
+                isSafePattern = mod.isSafePattern || mod.default?.isSafePattern || mod.default;
+            } catch {
+                return {
+                    classification: "warn",
+                    message: "redos-detector: Bibliothek konnte nicht geladen werden"
+                };
             }
-            data = await resp.json();
-        } catch (e) {
-            // Browser zeigt bei CORS typischerweise nur "Failed to fetch"
-            return {
-                classification: "warn",
-                message: `vuln-regex-detector: Request fehlgeschlagen (${e?.message || "Failed to fetch / CORS"})`
+
+            const opts = {
+                caseInsensitive: flags.includes("i"),
+                unicode: flags.includes("u"),
+                dotAll: flags.includes("s"),
+                multiLine: flags.includes("m"),
+                timeout: 80,
+                maxSteps: 20000,
+                maxScore: 200
             };
+
+            let rd;
+            try {
+                rd = isSafePattern(patternText, opts);
+            } catch (e) {
+                return {
+                    classification: "warn",
+                    message: `redos-detector: Analyse fehlgeschlagen (${e?.message || "Fehler"})`
+                };
+            }
+
+            if (!rd?.safe) {
+                const scoreText = rd?.score?.infinite
+                    ? "Score: ∞"
+                    : (typeof rd?.score?.value === "number" ? `Score: ${rd.score.value}` : "Score: ?");
+
+                const errText = rd?.error ? ` (${rd.error})` : "";
+
+                return {
+                    classification: "warn",
+                    message: `redos-detector: UNSAFE – ${scoreText}${errText}`
+                };
+            }
+
+            messages.push("redos-detector: unauffällig");
+        } else {
+            messages.push("redos-detector: übersprungen");
         }
 
-        const r =
-            (typeof data?.result === "string") ? data.result :
-                (typeof data?.result?.result === "string") ? data.result.result :
-                    null;
+        // -------------------------
+        // 3) Remote (optional)
+        // -------------------------
+        if (allowRemote) {
+            let data;
+            try {
+                const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        pattern: patternText,
+                        language: "javascript",
+                        requestType: "LOOKUP_ONLY"
+                    })
+                });
 
-        if (r === "SAFE") {
-            return {classification: "safe", message: "OK (lokal + remote: SAFE)"};
+                if (!resp.ok) {
+                    return {
+                        classification: "warn",
+                        message: `vuln-regex-detector: HTTP ${resp.status}`
+                    };
+                }
+
+                data = await resp.json();
+            } catch (e) {
+                return {
+                    classification: "warn",
+                    message: `vuln-regex-detector: Request fehlgeschlagen (${e?.message || "Failed to fetch / CORS"})`
+                };
+            }
+
+            const r =
+                (typeof data?.result === "string") ? data.result :
+                    (typeof data?.result?.result === "string") ? data.result.result :
+                        null;
+
+            if (r === "SAFE") {
+                messages.push("vuln-regex-detector: SAFE");
+            } else if (r === "VULNERABLE") {
+                return {
+                    classification: "warn",
+                    message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)"
+                };
+            } else if (r === "INVALID") {
+                return {
+                    classification: "warn",
+                    message: "vuln-regex-detector: INVALID (Regex ungültig)"
+                };
+            } else {
+                return {
+                    classification: "warn",
+                    message: `vuln-regex-detector: ${r || "UNKNOWN"}`
+                };
+            }
+        } else {
+            messages.push("Remote-Check: übersprungen");
         }
-        if (r === "VULNERABLE") {
-            return {classification: "warn", message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)"};
-        }
-        if (r === "INVALID") {
-            return {classification: "warn", message: "vuln-regex-detector: INVALID (Regex ungültig)"};
-        }
-        return {classification: "warn", message: `vuln-regex-detector: ${r || "UNKNOWN"}`};
+
+        // -------------------------
+        // Alles ok
+        // -------------------------
+        return {
+            classification: "safe",
+            message: messages.join(" · ")
+        };
     }
-
 
     function renderMatches(regex, srcText) {
         // For highlighting, we build a list of match ranges.
