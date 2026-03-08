@@ -1,5 +1,4 @@
 
-
 const ASCII = Array.from({ length: 128 }, (_, i) => String.fromCharCode(i));
 
 function parse(input) {
@@ -371,3 +370,45 @@ function initRegexCompare() {
         if (event.key === "Enter") compareNow();
     });
 }
+
+class RegexCompare {
+    static compare(patternA, patternB) {
+        const astA = simplify(parse(patternA));
+        const astB = simplify(parse(patternB));
+
+        const seen = new Set();
+        const queue = [{ a: astA, b: astB, witness: "" }];
+
+        while (queue.length) {
+            const { a, b, witness } = queue.shift();
+            const key = `${serialize(a)}###${serialize(b)}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+
+            if (nullable(a) !== nullable(b)) {
+                return {
+                    equal: false,
+                    witness,
+                    acceptsA: nullable(a),
+                    acceptsB: nullable(b),
+                };
+            }
+
+            for (const ch of ASCII) {
+                const da = simplify(derive(a, ch));
+                const db = simplify(derive(b, ch));
+                const nextKey = `${serialize(da)}###${serialize(db)}`;
+                if (!seen.has(nextKey)) {
+                    queue.push({ a: da, b: db, witness: witness + ch });
+                }
+            }
+        }
+
+        return { equal: true };
+    }
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    initRegexCompare();
+});
