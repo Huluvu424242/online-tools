@@ -29,21 +29,11 @@ function initRegex() {
         status.style.color = isError ? "var(--danger)" : "var(--muted)";
     };
 
-    function setSafety(state, message) {
-        // state: "neutral" | "safe" | "warn"
+    function setSafety(state) {
         safety.classList.remove("flat-safe", "flat-warn");
-
-        const valueEl = $(".flat-value", safety);
 
         if (state === "safe") safety.classList.add("flat-safe");
         if (state === "warn") safety.classList.add("flat-warn");
-
-        if (valueEl) {
-            valueEl.textContent = message;
-            valueEl.classList.toggle("muted", state === "neutral");
-        } else {
-            safety.textContent = message;
-        }
     }
 
 
@@ -53,27 +43,26 @@ function initRegex() {
     // 2) redos-detector einmal laden (cached Promise)
     const redosDetectorModule = import("https://esm.sh/redos-detector@6.1.2");
 
-    /**
-     * 3-stufige ReDoS-Prüfung:
-     * - safe-regex (lokal, schnell)
-     * - redos-detector (lokal, genauer)
-     * - vuln-regex-detector (remote, nur bei Opt-in)
-     *
-     * Rückgabe:
-     * { classification: "safe" | "warn" | "neutral", message: string }
-     */
     async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRedos, allowRemote) {
-        const messages = [];
+        const checks = [];
 
-        // 1) safe-regex
+        // -------------------------
+        // 1) safe-regex (immer)
+        // -------------------------
         let safeRegex;
         try {
             const mod = await safeRegexModule;
             safeRegex = mod.default || mod;
         } catch {
+            checks.push({
+                name: "safe-regex",
+                state: "warn",
+                message: "Bibliothek konnte nicht geladen werden"
+            });
+
             return {
                 classification: "warn",
-                message: "safe-regex: Bibliothek konnte nicht geladen werden"
+                checks
             };
         }
 
@@ -81,31 +70,55 @@ function initRegex() {
         try {
             safeOk = safeRegex(patternText);
         } catch {
+            checks.push({
+                name: "safe-regex",
+                state: "warn",
+                message: "Analyse fehlgeschlagen"
+            });
+
             return {
                 classification: "warn",
-                message: "safe-regex: Analyse fehlgeschlagen"
+                checks
             };
         }
 
         if (!safeOk) {
+            checks.push({
+                name: "safe-regex",
+                state: "warn",
+                message: "potenziell gefährlich (Backtracking möglich)"
+            });
+
             return {
                 classification: "warn",
-                message: "safe-regex: potenziell gefährlich (Backtracking möglich)"
+                checks
             };
         }
 
-        messages.push("safe-regex: unauffällig");
+        checks.push({
+            name: "safe-regex",
+            state: "safe",
+            message: "unauffällig"
+        });
 
-        // 2) redos-detector
+        // -------------------------
+        // 2) redos-detector (optional)
+        // -------------------------
         if (allowRedos) {
             let isSafePattern;
             try {
                 const mod = await redosDetectorModule;
                 isSafePattern = mod.isSafePattern || mod.default?.isSafePattern || mod.default;
             } catch {
+                checks.push({
+                    name: "redos-detector",
+                    state: "warn",
+                    message: "Bibliothek konnte nicht geladen werden"
+                });
+
                 return {
                     classification: "warn",
-                    message: "redos-detector: Bibliothek konnte nicht geladen werden"
+                    checks
                 };
             }
 
@@ -123,9 +136,15 @@ function initRegex() {
             try {
                 rd = isSafePattern(patternText, opts);
             } catch (e) {
+                checks.push({
+                    name: "redos-detector",
+                    state: "warn",
+                    message: `Analyse fehlgeschlagen (${e?.message || "Fehler"})`
+                });
+
                 return {
                     classification: "warn",
-                    message: `redos-detector: Analyse fehlgeschlagen (${e?.message || "Fehler"})`
+                    checks
                 };
             }
 
@@ -136,18 +155,34 @@ function initRegex() {
 
                 const errText = rd?.error ? ` (${rd.error})` : "";
 
+                checks.push({
+                    name: "redos-detector",
+                    state: "warn",
+                    message: `UNSAFE – ${scoreText}${errText}`
+                });
+
                 return {
                     classification: "warn",
-                    message: `redos-detector: UNSAFE – ${scoreText}${errText}`
+                    checks
                 };
             }
 
-            messages.push("redos-detector: unauffällig");
+            checks.push({
+                name: "redos-detector",
+                state: "safe",
+                message: "unauffällig"
+            });
         } else {
-            messages.push("redos-detector: übersprungen");
+            checks.push({
+                name: "redos-detector",
+                state: "neutral",
+                message: "übersprungen"
+            });
         }
 
-        // 3) Remote
+        // -------------------------
+        // 3) Remote (optional)
+        // -------------------------
         if (allowRemote) {
             let data;
             try {
@@ -162,17 +197,29 @@ function initRegex() {
                 });
 
                 if (!resp.ok) {
+                    checks.push({
+                        name: "Remote-Check",
+                        state: "warn",
+                        message: `HTTP ${resp.status}`
+                    });
+
                     return {
                         classification: "warn",
-                        message: `vuln-regex-detector: HTTP ${resp.status}`
+                        checks
                     };
                 }
 
                 data = await resp.json();
             } catch (e) {
+                checks.push({
+                    name: "Remote-Check",
+                    state: "warn",
+                    message: `Request fehlgeschlagen (${e?.message || "Failed to fetch / CORS"})`
+                });
+
                 return {
                     classification: "warn",
-                    message: `vuln-regex-detector: Request fehlgeschlagen (${e?.message || "Failed to fetch / CORS"})`
+                    checks
                 };
             }
 
@@ -182,31 +229,77 @@ function initRegex() {
                         null;
 
             if (r === "SAFE") {
-                messages.push("vuln-regex-detector: SAFE");
+                checks.push({
+                    name: "Remote-Check",
+                    state: "safe",
+                    message: "SAFE"
+                });
             } else if (r === "VULNERABLE") {
+                checks.push({
+                    name: "Remote-Check",
+                    state: "warn",
+                    message: "VULNERABLE (ReDoS möglich)"
+                });
+
                 return {
                     classification: "warn",
-                    message: "vuln-regex-detector: VULNERABLE (ReDoS möglich)"
+                    checks
                 };
             } else if (r === "INVALID") {
+                checks.push({
+                    name: "Remote-Check",
+                    state: "warn",
+                    message: "INVALID (Regex ungültig)"
+                });
+
                 return {
                     classification: "warn",
-                    message: "vuln-regex-detector: INVALID (Regex ungültig)"
+                    checks
                 };
             } else {
+                checks.push({
+                    name: "Remote-Check",
+                    state: "warn",
+                    message: r || "UNKNOWN"
+                });
+
                 return {
                     classification: "warn",
-                    message: `vuln-regex-detector: ${r || "UNKNOWN"}`
+                    checks
                 };
             }
         } else {
-            messages.push("Remote-Check: übersprungen");
+            checks.push({
+                name: "Remote-Check",
+                state: "neutral",
+                message: "übersprungen"
+            });
         }
 
         return {
             classification: "safe",
-            message: messages.join(" · ")
+            checks
         };
+    }
+
+    function renderSafetyChecks(checks) {
+        const valueEl = $(".flat-value", safety);
+        if (!valueEl) {
+            safety.textContent = "";
+            return;
+        }
+
+        if (!checks || checks.length === 0) {
+            valueEl.innerHTML = `<span class="muted">Noch nicht geprüft.</span>`;
+            return;
+        }
+
+        valueEl.innerHTML = checks.map((check) => `
+        <div class="safety-line safety-${check.state}">
+            <span class="safety-name">${escapeHtml(check.name)}:</span>
+            <span class="safety-message">${escapeHtml(check.message)}</span>
+        </div>
+    `).join("");
     }
 
     function renderMatches(regex, srcText) {
@@ -276,13 +369,20 @@ function initRegex() {
         }
 
         // 2) Danach Sicherheitsprüfung
-        setSafety("neutral", "Sicherheitsprüfung läuft …");
+        setSafety("neutral");
+        renderSafetyChecks([
+            { name: "safe-regex", state: "neutral", message: "Prüfung läuft …" }
+        ]);
 
         try {
             const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRedos, allowRemote);
-            setSafety(risk.classification, risk.message);
+            setSafety(risk.classification);
+            renderSafetyChecks(risk.checks);
         } catch (e) {
-            setSafety("warn", `Sicherheitsprüfung fehlgeschlagen (${e?.message || "Fehler"})`);
+            setSafety("warn");
+            renderSafetyChecks([
+                { name: "Sicherheitsprüfung", state: "warn", message: e?.message || "fehlgeschlagen" }
+            ]);
         }
     });
 
@@ -293,7 +393,8 @@ function initRegex() {
         setStatus("Geleert.");
         remoteConsent.checked = false;
         runRedosCheck.checked = false;
-        setSafety("neutral", "Noch nicht geprüft.");
+        setSafety("neutral");
+        renderSafetyChecks([]);
     });
 
     copyBtn.addEventListener("click", async () => {

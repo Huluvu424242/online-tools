@@ -386,6 +386,32 @@ label:not(.search):not(.consent) {
     color: var(--danger);
     border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
 }
+
+.safety-line {
+    display: block;
+    margin: 2px 0;
+}
+
+.safety-line + .safety-line {
+    margin-top: 4px;
+}
+
+.safety-name {
+    font-weight: 700;
+}
+
+.safety-safe {
+    color: var(--accent-2);
+}
+
+.safety-neutral {
+    color: var(--text);
+}
+
+.safety-warn {
+    color: var(--danger);
+}
+
 input[type="text"], input[type="search"], textarea {
     width: 100%;
     border-radius: 12px;
