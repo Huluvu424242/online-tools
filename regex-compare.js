@@ -1,5 +1,5 @@
 
-const ASCII = Array.from({ length: 128 }, (_, i) => String.fromCharCode(i));
+const ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(i + 32));
 const DOT_CHARS = new Set(
     ASCII.filter((ch) => ch !== "\n" && ch !== "\r")
 );
@@ -267,10 +267,19 @@ function escapeHtml(value) {
 
 function escapeVisible(value) {
     return escapeHtml(
-        value
-            .replaceAll("\n", "\\n")
-            .replaceAll("\r", "\\r")
-            .replaceAll("\t", "\\t")
+        [...value].map((ch) => {
+            const code = ch.charCodeAt(0);
+
+            if (ch === "\n") return "\\n";
+            if (ch === "\r") return "\\r";
+            if (ch === "\t") return "\\t";
+            if (ch === "\v") return "\\v";
+            if (ch === "\f") return "\\f";
+            if (code < 32 || code === 127) {
+                return `\\x${code.toString(16).padStart(2, "0")}`;
+            }
+            return ch;
+        }).join("")
     );
 }
 
