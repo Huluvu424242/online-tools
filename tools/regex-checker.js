@@ -1,5 +1,14 @@
+const REMOTE_REGEX_SERVER = "toybox.cs.vt.edu";
+const REMOTE_REGEX_API = "https://" + REMOTE_REGEX_SERVER + ":8000/api/lookup";
+
 /* ========= Tool: Regex ========= */
 function initRegex() {
+    const root = document.getElementById("tool-regex");
+    if (!root) return;
+
+    if (root.dataset.initialized) return;
+    root.dataset.initialized = "true";
+
     const pattern = $("#rxPattern");
     const text = $("#rxText");
     const runBtn = $("#rxRun");
@@ -12,6 +21,11 @@ function initRegex() {
     const runRedosCheck = $("#rxCheckRedos");
 
     if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck) return;
+
+    const label = $("#rxRemoteLabel");
+    if (label) {
+        label.append(` (Regex wird an ${REMOTE_REGEX_SERVER} gesendet)`);
+    }
 
     const flagEls = {
         g: $("#rxFlagG"),
@@ -41,6 +55,7 @@ function initRegex() {
         if (state === "warn") return "⚠";
         return "•";
     }
+
     // 1) safe-regex einmal laden (cached Promise)
     const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
 
@@ -190,9 +205,9 @@ function initRegex() {
         if (allowRemote) {
             let data;
             try {
-                const resp = await fetch("https://toybox.cs.vt.edu:8000/api/lookup", {
+                const resp = await fetch(REMOTE_REGEX_API, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({
                         pattern: patternText,
                         language: "javascript",
@@ -364,7 +379,7 @@ function initRegex() {
         // 1) Regex sofort kompilieren und Treffer direkt anzeigen
         try {
             rx = new RegExp(p, flags);
-            const { matches } = renderMatches(rx, t);
+            const {matches} = renderMatches(rx, t);
             setStatus(`OK. Flags: ${flags || "(keine)"} · Treffer: ${matches.length}`);
         } catch (e) {
             setStatus(`Regex Fehler: ${e.message}`, true);
@@ -376,7 +391,7 @@ function initRegex() {
         // 2) Danach Sicherheitsprüfung
         setSafety("neutral");
         renderSafetyChecks([
-            { name: "safe-regex", state: "neutral", message: "Prüfung läuft …" }
+            {name: "safe-regex", state: "neutral", message: "Prüfung läuft …"}
         ]);
 
         try {
@@ -386,7 +401,7 @@ function initRegex() {
         } catch (e) {
             setSafety("warn");
             renderSafetyChecks([
-                { name: "Sicherheitsprüfung", state: "warn", message: e?.message || "fehlgeschlagen" }
+                {name: "Sicherheitsprüfung", state: "warn", message: e?.message || "fehlgeschlagen"}
             ]);
         }
     });
