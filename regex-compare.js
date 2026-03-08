@@ -1,7 +1,8 @@
 
-const ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(i + 32));
+const PRINTABLE_ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(i + 32));
+const FULL_ASCII = Array.from({ length: 128 }, (_, i) => String.fromCharCode(i));
 const DOT_CHARS = new Set(
-    ASCII.filter((ch) => ch !== "\n" && ch !== "\r")
+    FULL_ASCII.filter((ch) => ch !== "\n" && ch !== "\r")
 );
 
 function parse(input) {
@@ -275,9 +276,11 @@ function escapeVisible(value) {
             if (ch === "\t") return "\\t";
             if (ch === "\v") return "\\v";
             if (ch === "\f") return "\\f";
+
             if (code < 32 || code === 127) {
                 return `\\x${code.toString(16).padStart(2, "0")}`;
             }
+
             return ch;
         }).join("")
     );
@@ -388,17 +391,37 @@ function initRegexCompare() {
 }
 
 class RegexCompare {
+
     static compare(patternA, patternB) {
+
         const astA = simplify(parse(patternA));
         const astB = simplify(parse(patternB));
+
+        // zuerst nur sichtbare Zeichen testen
+        let result = this._compareWithAlphabet(astA, astB, PRINTABLE_ASCII);
+
+        if (!result.equal) {
+            return result;
+        }
+
+        // falls nichts gefunden wurde → vollständiges ASCII testen
+        return this._compareWithAlphabet(astA, astB, FULL_ASCII);
+    }
+
+    static _compareWithAlphabet(astA, astB, alphabet) {
 
         const seen = new Set();
         const queue = [{ a: astA, b: astB, witness: "" }];
 
         while (queue.length) {
+
             const { a, b, witness } = queue.shift();
             const key = `${serialize(a)}###${serialize(b)}`;
-            if (seen.has(key)) continue;
+
+            if (seen.has(key)) {
+                continue;
+            }
+
             seen.add(key);
 
             if (nullable(a) !== nullable(b)) {
@@ -406,16 +429,23 @@ class RegexCompare {
                     equal: false,
                     witness,
                     acceptsA: nullable(a),
-                    acceptsB: nullable(b),
+                    acceptsB: nullable(b)
                 };
             }
 
-            for (const ch of ASCII) {
+            for (const ch of alphabet) {
+
                 const da = simplify(derive(a, ch));
                 const db = simplify(derive(b, ch));
+
                 const nextKey = `${serialize(da)}###${serialize(db)}`;
+
                 if (!seen.has(nextKey)) {
-                    queue.push({ a: da, b: db, witness: witness + ch });
+                    queue.push({
+                        a: da,
+                        b: db,
+                        witness: witness + ch
+                    });
                 }
             }
         }
