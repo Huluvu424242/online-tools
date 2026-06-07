@@ -1,6 +1,3 @@
-const REMOTE_REGEX_SERVER = "toybox.cs.vt.edu";
-const REMOTE_REGEX_API = "https://" + REMOTE_REGEX_SERVER + ":8000/api/lookup";
-
 /* ========= Tool: Regex ========= */
 function initRegex() {
     const root = document.getElementById("tool-regex");
@@ -17,17 +14,9 @@ function initRegex() {
     const status = $("#rxStatus");
     const copyBtn = $("#rxCopyMatches");
     const safety = $("#rxSafety");
-    const remoteConsent = $("#rxRemoteConsent");
     const runRedosCheck = $("#rxCheckRedos");
-    const label = $("#rxRemoteLabel");
 
-    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !remoteConsent || !runRedosCheck || !label) return;
-
-
-    if (!label.dataset.serverInjected) {
-        label.append(` (Regex wird an ${REMOTE_REGEX_SERVER} gesendet)`);
-        label.dataset.serverInjected = "true";
-    }
+    if (!pattern || !text || !runBtn || !clearBtn || !result || !status || !copyBtn || !safety || !runRedosCheck) return;
 
     const flagEls = {
         g: $("#rxFlagG"),
@@ -46,10 +35,11 @@ function initRegex() {
     };
 
     function setSafety(state) {
-        safety.classList.remove("flat-safe", "flat-warn");
+        safety.classList.remove("flat-safe", "flat-warn", "flat-neutral");
 
         if (state === "safe") safety.classList.add("flat-safe");
         if (state === "warn") safety.classList.add("flat-warn");
+        if (state === "neutral") safety.classList.add("flat-neutral");
     }
 
     function safetyIcon(state) {
@@ -58,232 +48,115 @@ function initRegex() {
         return "•";
     }
 
-    // 1) safe-regex einmal laden (cached Promise)
-    const safeRegexModule = import("https://esm.sh/safe-regex@1.1.0");
+    function hasNestedQuantifier(patternText) {
+        return /\((?:\\.|[^()])*[+*](?:\\.|[^()])*\)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText);
+    }
 
-    // 2) redos-detector einmal laden (cached Promise)
-    const redosDetectorModule = import("https://esm.sh/redos-detector@6.1.2");
+    function hasAmbiguousWildcardRepeat(patternText) {
+        return /(?:\.\*|\.\+)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText) || /\((?:\\.|[^()])*\.\*(?:\\.|[^()])*\)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText);
+    }
 
-    async function analyzeCatastrophicBacktrackingRisk(patternText, flags, allowRedos, allowRemote) {
-        const checks = [];
+    function hasOverlappingAlternation(patternText) {
+        const groups = patternText.match(/\((?:\\.|[^()])+\)\s*(?:[+*]|\{\s*\d*\s*,)/g) || [];
 
-        // -------------------------
-        // 1) safe-regex (immer)
-        // -------------------------
-        let safeRegex;
-        try {
-            const mod = await safeRegexModule;
-            safeRegex = mod.default || mod;
-        } catch {
-            checks.push({
-                name: "safe-regex",
-                state: "warn",
-                message: "Bibliothek konnte nicht geladen werden"
-            });
+        return groups.some((group) => {
+            const body = group.replace(/^\(/, "").replace(/\)\s*(?:[+*]|\{\s*\d*\s*,).*$/, "");
+            const parts = body.split("|").map((part) => part.replace(/\\./g, "x")).filter(Boolean);
 
+            return parts.some((part, index) => parts.some((other, otherIndex) => (
+                index !== otherIndex && (part.startsWith(other) || other.startsWith(part))
+            )));
+        });
+    }
+
+    function hasLongBacktrackingChain(patternText) {
+        const greedyQuantifiers = patternText.match(/(?:\\.|\[[^\]]*\]|\([^)]*\)|\.|\w)\s*(?:[+*]|\{\s*\d*\s*,)/g) || [];
+        return greedyQuantifiers.length >= 4;
+    }
+
+    function runBaselineSafetyHeuristic(patternText) {
+        const findings = [];
+
+        if (hasNestedQuantifier(patternText)) {
+            findings.push("verschachtelte Quantifizierer");
+        }
+
+        if (hasAmbiguousWildcardRepeat(patternText)) {
+            findings.push("wiederholter Wildcard-Ausdruck");
+        }
+
+        if (hasOverlappingAlternation(patternText)) {
+            findings.push("überlappende Alternativen in Wiederholung");
+        }
+
+        if (findings.length > 0) {
             return {
-                classification: "warn",
-                checks
+                state: "warn",
+                message: `potenziell gefährlich (${findings.join(", ")})`
             };
         }
 
-        let safeOk = false;
-        try {
-            safeOk = safeRegex(patternText);
-        } catch {
-            checks.push({
-                name: "safe-regex",
-                state: "warn",
-                message: "Analyse fehlgeschlagen"
-            });
-
-            return {
-                classification: "warn",
-                checks
-            };
-        }
-
-        if (!safeOk) {
-            checks.push({
-                name: "safe-regex",
-                state: "warn",
-                message: "potenziell gefährlich (Backtracking möglich)"
-            });
-
-            return {
-                classification: "warn",
-                checks
-            };
-        }
-
-        checks.push({
-            name: "safe-regex",
+        return {
             state: "safe",
             message: "unauffällig"
-        });
+        };
+    }
 
-        // -------------------------
-        // 2) redos-detector (optional)
-        // -------------------------
-        if (allowRedos) {
-            let isSafePattern;
-            try {
-                const mod = await redosDetectorModule;
-                isSafePattern = mod.isSafePattern || mod.default?.isSafePattern || mod.default;
-            } catch {
-                checks.push({
-                    name: "redos-detector",
-                    state: "warn",
-                    message: "Bibliothek konnte nicht geladen werden"
-                });
+    function runExtendedSafetyHeuristic(patternText) {
+        const findings = [];
 
-                return {
-                    classification: "warn",
-                    checks
-                };
-            }
-
-            const opts = {
-                caseInsensitive: flags.includes("i"),
-                unicode: flags.includes("u"),
-                dotAll: flags.includes("s"),
-                multiLine: flags.includes("m"),
-                timeout: 80,
-                maxSteps: 20000,
-                maxScore: 200
-            };
-
-            let rd;
-            try {
-                rd = isSafePattern(patternText, opts);
-            } catch (e) {
-                checks.push({
-                    name: "redos-detector",
-                    state: "warn",
-                    message: `Analyse fehlgeschlagen (${e?.message || "Fehler"})`
-                });
-
-                return {
-                    classification: "warn",
-                    checks
-                };
-            }
-
-            if (!rd?.safe) {
-                const scoreText = rd?.score?.infinite
-                    ? "Score: ∞"
-                    : (typeof rd?.score?.value === "number" ? `Score: ${rd.score.value}` : "Score: ?");
-
-                const errText = rd?.error ? ` (${rd.error})` : "";
-
-                checks.push({
-                    name: "redos-detector",
-                    state: "warn",
-                    message: `UNSAFE – ${scoreText}${errText}`
-                });
-
-                return {
-                    classification: "warn",
-                    checks
-                };
-            }
-
-            checks.push({
-                name: "redos-detector",
-                state: "safe",
-                message: "unauffällig"
-            });
-        } else {
-            checks.push({
-                name: "redos-detector",
-                state: "neutral",
-                message: "übersprungen"
-            });
+        if (hasLongBacktrackingChain(patternText)) {
+            findings.push("mehrere wiederholte Teilmuster");
         }
 
-        // -------------------------
-        // 3) Remote (optional)
-        // -------------------------
-        if (allowRemote) {
-            let data;
-            try {
-                const resp = await fetch(REMOTE_REGEX_API, {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({
-                        pattern: patternText,
-                        language: "javascript",
-                        requestType: "LOOKUP_ONLY"
-                    })
-                });
+        if (/\([^)]*\|[^)]*\)\s*(?:[+*]|\{\s*\d*\s*,)/.test(patternText) && /(?:[+*]|\{\s*\d*\s*,)/.test(patternText.replace(/\([^)]*\|[^)]*\)\s*(?:[+*]|\{\s*\d*\s*,)/, ""))) {
+            findings.push("Alternation kombiniert mit weiteren Quantifizierern");
+        }
 
-                if (!resp.ok) {
-                    checks.push({
-                        name: "Remote-Check",
-                        state: "warn",
-                        message: `HTTP ${resp.status}`
-                    });
+        if (/(?:\[[^\]]*\]|\\[dws]|\.)\s*(?:[+*]|\{\s*\d*\s*,)\s*(?:\[[^\]]*\]|\\[dws]|\.)\s*(?:[+*]|\{\s*\d*\s*,)/.test(patternText)) {
+            findings.push("benachbarte breite Zeichenklassen mit Wiederholung");
+        }
 
-                    return {
-                        classification: "warn",
-                        checks
-                    };
-                }
+        if (findings.length > 0) {
+            return {
+                state: "warn",
+                message: `auffällig (${findings.join(", ")})`
+            };
+        }
 
-                data = await resp.json();
-            } catch (e) {
-                checks.push({
-                    name: "Remote-Check",
-                    state: "warn",
-                    message: `Request fehlgeschlagen (${e?.message || "Failed to fetch / CORS"})`
-                });
+        return {
+            state: "safe",
+            message: "keine zusätzlichen Auffälligkeiten"
+        };
+    }
 
-                return {
-                    classification: "warn",
-                    checks
-                };
-            }
+    async function analyzeCatastrophicBacktrackingRisk(patternText, allowExtendedHeuristic) {
+        const checks = [];
+        const baseline = runBaselineSafetyHeuristic(patternText);
 
-            const r =
-                (typeof data?.result === "string") ? data.result :
-                    (typeof data?.result?.result === "string") ? data.result.result :
-                        null;
+        checks.push({
+            name: "lokale Basis-Heuristik",
+            state: baseline.state,
+            message: baseline.message
+        });
 
-            if (r === "SAFE") {
-                checks.push({
-                    name: "Remote-Check",
-                    state: "safe",
-                    message: "SAFE"
-                });
-            } else if (r === "VULNERABLE") {
-                checks.push({
-                    name: "Remote-Check",
-                    state: "warn",
-                    message: "VULNERABLE (ReDoS möglich)"
-                });
+        if (baseline.state === "warn") {
+            return {
+                classification: "warn",
+                checks
+            };
+        }
 
-                return {
-                    classification: "warn",
-                    checks
-                };
-            } else if (r === "INVALID") {
-                checks.push({
-                    name: "Remote-Check",
-                    state: "warn",
-                    message: "INVALID (Regex ungültig)"
-                });
+        if (allowExtendedHeuristic) {
+            const extended = runExtendedSafetyHeuristic(patternText);
 
-                return {
-                    classification: "warn",
-                    checks
-                };
-            } else {
-                checks.push({
-                    name: "Remote-Check",
-                    state: "warn",
-                    message: r || "UNKNOWN"
-                });
+            checks.push({
+                name: "erweiterte lokale Heuristik",
+                state: extended.state,
+                message: extended.message
+            });
 
+            if (extended.state === "warn") {
                 return {
                     classification: "warn",
                     checks
@@ -291,7 +164,7 @@ function initRegex() {
             }
         } else {
             checks.push({
-                name: "Remote-Check",
+                name: "erweiterte lokale Heuristik",
                 state: "neutral",
                 message: "übersprungen"
             });
@@ -368,13 +241,13 @@ function initRegex() {
         if (!p) {
             setStatus("Bitte ein Pattern eingeben.", true);
             result.innerHTML = `<p class="muted">Noch nichts ausgeführt.</p>`;
-            setSafety("neutral", "Noch nicht geprüft.");
+            setSafety("neutral");
+            renderSafetyChecks([]);
             return;
         }
 
         const flags = getFlags();
-        const allowRemote = remoteConsent.checked;
-        const allowRedos = runRedosCheck.checked;
+        const allowExtendedHeuristic = runRedosCheck.checked;
 
         let rx;
 
@@ -386,18 +259,21 @@ function initRegex() {
         } catch (e) {
             setStatus(`Regex Fehler: ${e.message}`, true);
             result.innerHTML = `<p class="muted">Regex konnte nicht kompiliert werden.</p>`;
-            setSafety("neutral", "Nicht geprüft, da Regex ungültig ist.");
+            setSafety("neutral");
+            renderSafetyChecks([
+                {name: "Sicherheitsprüfung", state: "neutral", message: "nicht geprüft, da Regex ungültig ist"}
+            ]);
             return;
         }
 
-        // 2) Danach Sicherheitsprüfung
+        // 2) Danach lokale Sicherheitsprüfung
         setSafety("neutral");
         renderSafetyChecks([
-            {name: "safe-regex", state: "neutral", message: "Prüfung läuft …"}
+            {name: "lokale Basis-Heuristik", state: "neutral", message: "Prüfung läuft …"}
         ]);
 
         try {
-            const risk = await analyzeCatastrophicBacktrackingRisk(p, flags, allowRedos, allowRemote);
+            const risk = await analyzeCatastrophicBacktrackingRisk(p, allowExtendedHeuristic);
             setSafety(risk.classification);
             renderSafetyChecks(risk.checks);
         } catch (e) {
@@ -413,7 +289,6 @@ function initRegex() {
         text.value = "";
         result.innerHTML = `<p class="muted">Noch nichts ausgeführt.</p>`;
         setStatus("Geleert.");
-        remoteConsent.checked = false;
         runRedosCheck.checked = false;
         setSafety("neutral");
         renderSafetyChecks([]);

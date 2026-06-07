@@ -612,3 +612,46 @@ mark {
         scroll-behavior: auto !important;
     }
 }
+/* Offline availability notice */
+.offline-notice {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--accent-2) 35%, var(--border));
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 12%, var(--surface-2)), var(--surface-2));
+}
+
+.offline-notice h1 {
+    margin: 0 0 6px;
+    font-size: 1.2rem;
+}
+
+.offline-notice p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.offline-actions {
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+}
+
+.btn:disabled {
+    cursor: wait;
+    opacity: .65;
+}
+
+@media (max-width: 860px) {
+    .offline-notice {
+        grid-template-columns: 1fr;
+    }
+
+    .offline-actions {
+        justify-items: stretch;
+    }
+}
