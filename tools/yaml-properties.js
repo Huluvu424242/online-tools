@@ -1,6 +1,6 @@
 "use strict";
 
-/* ========= Tool: YAML/Properties Konverter ========= */
+/* ========= Tool: Konverter ========= */
 function stripYamlComment(line) {
     let quote = null;
 
@@ -359,9 +359,18 @@ function initYamlPropertiesConverter() {
     );
 
     const convert = () => {
+        const source = input.value;
+
+        if (!source.trim()) {
+            output.value = "";
+            setStatus("Eingabe ist leer.");
+            setAnnounce("YAML Properties Eingabe ist leer");
+            return;
+        }
+
         try {
-            output.value = convertValue(input.value);
-            setStatus(input.value.trim() ? "Konvertierung abgeschlossen." : "Eingabe ist leer.");
+            output.value = convertValue(source);
+            setStatus("Konvertierung abgeschlossen.");
             setAnnounce("YAML Properties Konvertierung abgeschlossen");
         } catch (error) {
             setStatus(error?.message || "Konvertierung fehlgeschlagen.", true);
@@ -370,24 +379,22 @@ function initYamlPropertiesConverter() {
     };
 
     mode.addEventListener("change", () => {
+        output.value = "";
         syncLabels();
-        setStatus("Konvertierungsrichtung geändert.");
+        setStatus("Konvertierungsrichtung geändert. Ausgabe geleert, damit kein Ergebnis der alten Richtung stehen bleibt.");
     });
 
     convertBtn.addEventListener("click", convert);
 
     swapBtn.addEventListener("click", () => {
         try {
-            if (!output.value && input.value) {
-                output.value = convertValue(input.value);
-            }
+            const convertedInput = output.value || (input.value.trim() ? convertValue(input.value) : "");
 
-            const previousInput = input.value;
-            input.value = output.value;
-            output.value = previousInput;
+            input.value = convertedInput;
+            output.value = "";
             mode.value = mode.value === "propertiesToYaml" ? "yamlToProperties" : "propertiesToYaml";
             syncLabels();
-            setStatus("Eingabe/Ausgabe getauscht und Richtung gewechselt.");
+            setStatus("Eingabe/Ausgabe getauscht, Richtung gewechselt und Ausgabe für die nächste Konvertierung geleert.");
         } catch (error) {
             setStatus(error?.message || "Tauschen fehlgeschlagen.", true);
         }
