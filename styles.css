@@ -410,6 +410,15 @@ label:not(.search):not(.consent) {
     height: 20px;
 }
 
+.regex-flags label:not(.consent) {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.regex-flags input[type="checkbox"] {
+    flex: 0 0 auto;
+}
+
 .option-group-stack {
     display: grid;
     gap: 8px;
@@ -848,7 +857,7 @@ mark {
     }
 }
 
-/* De-/Encodierer: Algorithmusauswahl über Eingabe und Ausgabe platzieren. */
+/* De-/Encoder: Algorithmusauswahl über Eingabe und Ausgabe platzieren. */
 .encoder-settings {
     display: grid;
     gap: 8px;
