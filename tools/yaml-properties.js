@@ -1,6 +1,6 @@
 "use strict";
 
-/* ========= Tool: YAML/Properties Konverter ========= */
+/* ========= Tool: Konverter ========= */
 function stripYamlComment(line) {
     let quote = null;
 
