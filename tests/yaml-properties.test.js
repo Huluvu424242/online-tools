@@ -97,10 +97,24 @@ assert.equal(elements["#ypMode"].value, "propertiesToYaml");
 assert.equal(elements["#ypInput"].value, expectedProperties);
 assert.equal(elements["#ypOutputLabel"].textContent, "Ausgabe (YAML)");
 assert.equal(elements["#ypOutput"].placeholder, "YAML-Ergebnis…");
+assert.equal(elements["#ypOutput"].value, "");
+assert.match(elements["#ypStatus"].textContent, /Ausgabe für die nächste Konvertierung geleert/);
 
 elements["#ypConvert"].click();
 assert.match(elements["#ypOutput"].value, /spring:\n  application:\n    name: demo-service/);
 assert.match(elements["#ypStatus"].textContent, /Konvertierung abgeschlossen/);
+
+elements["#ypInput"].value = "";
+elements["#ypOutput"].value = "stale.output=value";
+elements["#ypConvert"].click();
+assert.equal(elements["#ypOutput"].value, "");
+assert.equal(elements["#ypStatus"].textContent, "Eingabe ist leer.");
+
+elements["#ypOutput"].value = "stale.output=value";
+elements["#ypMode"].value = "yamlToProperties";
+elements["#ypMode"].change();
+assert.equal(elements["#ypOutput"].value, "");
+assert.match(elements["#ypStatus"].textContent, /Ausgabe geleert/);
 
 elements["#ypClear"].click();
 assert.equal(elements["#ypInput"].value, "");
