@@ -265,15 +265,30 @@ code {
 
 .nav-link {
     display: inline-flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     justify-content: center;
+    gap: 2px;
     min-height: 44px;
     min-width: max-content;
-    padding: 10px 12px;
-    border-radius: 999px;
+    max-width: min(72vw, 260px);
+    padding: 9px 12px;
+    border-radius: 14px;
     border: 1px solid var(--border);
     background: var(--surface);
-    white-space: nowrap;
+    white-space: normal;
+    text-align: left;
+}
+
+.nav-link-label {
+    font-weight: 650;
+    line-height: 1.15;
+}
+
+.nav-link-hint {
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.15;
 }
 
 .nav-link:focus {
@@ -393,6 +408,28 @@ label:not(.search):not(.consent) {
 .option-group input[type="checkbox"] {
     width: 20px;
     height: 20px;
+}
+
+.regex-flags {
+    display: grid;
+    grid-template-columns: repeat(6, 44px);
+    gap: 6px;
+    justify-content: start;
+    overflow-x: auto;
+}
+
+.regex-flags label:not(.consent) {
+    display: inline-flex;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: 44px;
+    padding-inline: 4px;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.regex-flags input[type="checkbox"] {
+    flex: 0 0 auto;
 }
 
 .option-group-stack {
@@ -833,7 +870,7 @@ mark {
     }
 }
 
-/* De-/Encodierer: Algorithmusauswahl über Eingabe und Ausgabe platzieren. */
+/* De-/Encoder: Algorithmusauswahl über Eingabe und Ausgabe platzieren. */
 .encoder-settings {
     display: grid;
     gap: 8px;

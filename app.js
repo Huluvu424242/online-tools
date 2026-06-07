@@ -83,7 +83,19 @@ function initToolNav() {
         a.className = "nav-link";
         a.href = `#${id}`;
         a.dataset.tool = toolName;
-        a.textContent = label;
+
+        const labelText = document.createElement("span");
+        labelText.className = "nav-link-label";
+        labelText.textContent = label;
+        a.appendChild(labelText);
+
+        const hint = section.dataset.navHint?.trim();
+        if (hint) {
+            const hintText = document.createElement("span");
+            hintText.className = "nav-link-hint";
+            hintText.textContent = hint;
+            a.appendChild(hintText);
+        }
 
         li.appendChild(a);
         nav.appendChild(li);

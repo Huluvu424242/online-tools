@@ -21,10 +21,18 @@ Auf der Startseite gibt es den Button **Offline-ZIP herunterladen**. Damit wird 
 ## Enthaltene Tools
 
 - Cron Erklärer
-- Base64 Codierer/Dekodierer
-- YAML/Properties Konverter für Java-nahe Konfigurationen
+- De-/Encoder für Base64 und ROT13
+- Konverter für YAML/Properties und Java-nahe Konfigurationen
 - Regex Checker mit lokaler ReDoS-Heuristik
 - Regex Vergleich für eine eingeschränkte reguläre Teilmenge
+
+## Tests
+
+Die JavaScript-Regressionschecks laufen ohne externe Abhängigkeiten direkt mit Node.js:
+
+```bash
+node tests/yaml-properties.test.js
+```
 
 ## Datenschutz und externe Abhängigkeiten
 

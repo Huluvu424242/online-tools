@@ -132,10 +132,10 @@
         </section>
 
         <!-- TOOL: Base64 -->
-        <section class="tool" id="tool-base64" data-name="Base64 ROT13 De-/Encodierer" data-nav="De-/Encodierer"
-                 data-tags="base64 rot13 encode decode verschlüsselung codierung">
+        <section class="tool" id="tool-base64" data-name="Base64 ROT13 De-/Encoder" data-nav="De-/Encoder" data-nav-hint="Base64, ROT13, ..."
+                 data-tags="base64 rot13 encode decode verschlüsselung codierung encoder decoder">
             <header class="tool-header">
-                <h1>Base64/ROT13</h1>
+                <h1>De-/Encoder</h1>
                 <p class="muted">Text per auswählbarem Algorithmus kodieren oder dekodieren.</p>
             </header>
 
@@ -178,11 +178,11 @@
             </div>
         </section>
 
-        <!-- TOOL: YAML/Properties Konverter -->
-        <section class="tool" id="tool-yaml-properties" data-name="YAML Properties Konverter" data-nav="Konverter"
+        <!-- TOOL: Konverter -->
+        <section class="tool" id="tool-yaml-properties" data-name="Konverter" data-nav="Konverter" data-nav-hint="yaml, properties, ..."
                  data-tags="yaml yml properties java spring konfiguration converter konverter">
             <header class="tool-header">
-                <h1>YAML/Properties Konverter</h1>
+                <h1>Konverter</h1>
                 <p class="muted">Konvertiert Java-nahe Konfigurationen zwischen YAML und .properties – vollständig lokal im Browser.</p>
             </header>
 
@@ -251,7 +251,7 @@ spring:
                     <input id="rxPattern" type="text" spellcheck="false"
                            placeholder="z.B. \\b\\w+@\\w+\\.\\w+\\b"/>
 
-                    <fieldset class="option-group" aria-label="Regex Flags">
+                    <fieldset class="option-group regex-flags" aria-label="Regex Flags">
                         <legend>Flags</legend>
                         <label><input type="checkbox" id="rxFlagG"/> g</label>
                         <label><input type="checkbox" id="rxFlagI"/> i</label>
