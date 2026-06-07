@@ -22,6 +22,7 @@ Auf der Startseite gibt es den Button **Offline-ZIP herunterladen**. Damit wird 
 
 - Cron Erklärer
 - Base64 Codierer/Dekodierer
+- YAML/Properties Konverter für Java-nahe Konfigurationen
 - Regex Checker mit lokaler ReDoS-Heuristik
 - Regex Vergleich für eine eingeschränkte reguläre Teilmenge
 
