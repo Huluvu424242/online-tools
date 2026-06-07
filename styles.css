@@ -427,7 +427,7 @@ label.consent-warn {
     color: var(--danger);
 }
 
-input[type="text"], input[type="search"], textarea {
+input[type="text"], input[type="search"], textarea, select {
     width: 100%;
     min-height: 44px;
     border-radius: 12px;
@@ -436,12 +436,28 @@ input[type="text"], input[type="search"], textarea {
     color: var(--text);
     padding: 10px 12px;
     outline: none;
-    resize: vertical;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     font-size: 1rem;
 }
 
-textarea:focus, input:focus {
+textarea {
+    resize: vertical;
+}
+
+select {
+    appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 12px) 50%;
+    background-size: 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 36px;
+}
+
+textarea:focus, input:focus, select:focus {
     box-shadow: var(--focus);
     border-color: var(--accent);
 }
