@@ -354,10 +354,14 @@ function initYamlPropertiesConverter() {
         output.placeholder = `${outputLabel}-Ergebnis…`;
     };
 
+    const convertValue = (value, conversionMode = mode.value) => (
+        conversionMode === "propertiesToYaml" ? propertiesToYaml(value) : yamlToProperties(value)
+    );
+
     const convert = () => {
         try {
-            output.value = mode.value === "propertiesToYaml" ? propertiesToYaml(input.value) : yamlToProperties(input.value);
-            setStatus("Konvertierung abgeschlossen.");
+            output.value = convertValue(input.value);
+            setStatus(input.value.trim() ? "Konvertierung abgeschlossen." : "Eingabe ist leer.");
             setAnnounce("YAML Properties Konvertierung abgeschlossen");
         } catch (error) {
             setStatus(error?.message || "Konvertierung fehlgeschlagen.", true);
@@ -373,17 +377,26 @@ function initYamlPropertiesConverter() {
     convertBtn.addEventListener("click", convert);
 
     swapBtn.addEventListener("click", () => {
-        const previousInput = input.value;
-        input.value = output.value;
-        output.value = previousInput;
-        mode.value = mode.value === "propertiesToYaml" ? "yamlToProperties" : "propertiesToYaml";
-        syncLabels();
-        setStatus("Eingabe/Ausgabe getauscht und Richtung gewechselt.");
+        try {
+            if (!output.value && input.value) {
+                output.value = convertValue(input.value);
+            }
+
+            const previousInput = input.value;
+            input.value = output.value;
+            output.value = previousInput;
+            mode.value = mode.value === "propertiesToYaml" ? "yamlToProperties" : "propertiesToYaml";
+            syncLabels();
+            setStatus("Eingabe/Ausgabe getauscht und Richtung gewechselt.");
+        } catch (error) {
+            setStatus(error?.message || "Tauschen fehlgeschlagen.", true);
+        }
     });
 
     clearBtn.addEventListener("click", () => {
         input.value = "";
         output.value = "";
+        syncLabels();
         setStatus("Geleert.");
     });
 
