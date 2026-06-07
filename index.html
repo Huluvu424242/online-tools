@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="styles.css"/>
     <script defer src="tools/cron-erklaerer.js"></script>
     <script defer src="tools/base64.js"></script>
+    <script defer src="tools/rot13.js"></script>
+    <script defer src="tools/zip.js"></script>
+    <script defer src="tools/yaml-properties.js"></script>
     <script defer src="tools/regex-checker.js"></script>
     <script defer src="tools/regex-compare.js"></script>
     <script defer src="app.js"></script>
@@ -37,12 +40,16 @@
     </div>
 
     <div class="header-right">
-        <label class="search" for="toolSearch">
-            <span class="sr-only">Tools durchsuchen</span>
-            <input id="toolSearch" type="search" inputmode="search" autocomplete="off"
-                   placeholder="Tool suchen… (z.B. base64, regex, cron)"/>
-            <span class="search-hint" aria-hidden="true">Ctrl/⌘ K</span>
-        </label>
+        <div class="search-group">
+            <label class="search" for="toolSearch">
+                <span class="sr-only">Tools durchsuchen</span>
+                <input id="toolSearch" type="search" inputmode="search" autocomplete="off"
+                       placeholder="Tool suchen… (z.B. base64, regex, cron)"/>
+            </label>
+            <p class="search-keyboard-help">
+                Tastatur: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> Suche · <kbd>Esc</kbd> Reset
+            </p>
+        </div>
 
         <button id="themeToggle" class="btn" type="button" aria-pressed="false">
             <span class="btn-icon" aria-hidden="true">🌓</span>
@@ -62,11 +69,6 @@
 
         <ul id="toolNav" class="nav-list"></ul>
 
-        <div class="sidebar-footer">
-            <p class="muted">
-                Tastatur: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> Suche · <kbd>Esc</kbd> Reset
-            </p>
-        </div>
     </nav>
 
     <main id="main" class="content" role="main" tabindex="-1">
@@ -130,18 +132,29 @@
         </section>
 
         <!-- TOOL: Base64 -->
-        <section class="tool" id="tool-base64" data-name="Base64" data-nav="Base64 Codierer"
-                 data-tags="base64 encode decode">
+        <section class="tool" id="tool-base64" data-name="Base64 ROT13 De-/Encodierer" data-nav="De-/Encodierer"
+                 data-tags="base64 rot13 encode decode verschlüsselung codierung">
             <header class="tool-header">
-                <h1>Base64</h1>
-                <p class="muted">Text Base64-kodieren oder dekodieren (UTF-8).</p>
+                <h1>Base64/ROT13</h1>
+                <p class="muted">Text per auswählbarem Algorithmus kodieren oder dekodieren.</p>
             </header>
 
-            <div class="grid">
+            <div class="grid encoder-grid">
+                <div class="panel encoder-settings">
+                    <label for="b64Algorithm">Algorithmus</label>
+                    <select id="b64Algorithm" aria-describedby="b64AlgorithmHint">
+                        <option value="base64">Base64 (UTF-8)</option>
+                        <option value="rot13">ROT13</option>
+                    </select>
+                    <p class="hint" id="b64AlgorithmHint">
+                        Base64 wandelt UTF-8-Text in eine ASCII-Zeichenfolge um und kann diese wieder zurückdekodieren.
+                    </p>
+                </div>
+
                 <div class="panel">
                     <label for="b64Input">Eingabe</label>
                     <textarea id="b64Input" rows="8" spellcheck="false"
-                              placeholder="Text oder Base64 hier einfügen…"></textarea>
+                              placeholder="Text oder kodierte Daten hier einfügen…"></textarea>
 
                     <div class="row">
                         <button class="btn primary" id="b64Encode" type="button">Kodieren</button>
@@ -152,16 +165,76 @@
                 </div>
 
                 <div class="panel">
-                    <div class="row space-between">
-                        <label for="b64Output">Ausgabe</label>
-                        <button class="btn" id="b64Copy" type="button">Kopieren</button>
-                    </div>
+                    <label for="b64Output">Ausgabe</label>
                     <textarea id="b64Output" rows="8" spellcheck="false" readonly
                               placeholder="Ergebnis…"></textarea>
+
+                    <div class="row">
+                        <button class="btn" id="b64Copy" type="button">Kopieren</button>
+                    </div>
 
                     <p class="hint" id="b64Status" role="status" aria-live="polite"></p>
                 </div>
             </div>
+        </section>
+
+        <!-- TOOL: YAML/Properties Konverter -->
+        <section class="tool" id="tool-yaml-properties" data-name="YAML Properties Konverter" data-nav="Konverter"
+                 data-tags="yaml yml properties java spring konfiguration converter konverter">
+            <header class="tool-header">
+                <h1>YAML/Properties Konverter</h1>
+                <p class="muted">Konvertiert Java-nahe Konfigurationen zwischen YAML und .properties – vollständig lokal im Browser.</p>
+            </header>
+
+            <div class="grid encoder-grid">
+                <div class="panel encoder-settings">
+                    <label for="ypMode">Konvertierungsrichtung</label>
+                    <select id="ypMode" aria-describedby="ypModeHint">
+                        <option value="yamlToProperties">YAML → Properties</option>
+                        <option value="propertiesToYaml">Properties → YAML</option>
+                    </select>
+                    <p class="hint" id="ypModeHint">
+                        Unterstützt gängige verschachtelte Java-/Spring-Konfigurationen, einfache Listen und skalare Werte.
+                    </p>
+                </div>
+
+                <div class="panel">
+                    <label for="ypInput" id="ypInputLabel">Eingabe (YAML)</label>
+                    <textarea id="ypInput" rows="10" spellcheck="false"
+                              placeholder="server:
+  port: 8080
+spring:
+  application:
+    name: demo"></textarea>
+
+                    <div class="row">
+                        <button class="btn primary" id="ypConvert" type="button">Konvertieren</button>
+                        <button class="btn" id="ypExample" type="button">Beispiel</button>
+                        <button class="btn" id="ypSwap" type="button">↔ Tauschen</button>
+                        <button class="btn" id="ypClear" type="button">Leeren</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <label for="ypOutput" id="ypOutputLabel">Ausgabe (Properties)</label>
+                    <textarea id="ypOutput" rows="10" spellcheck="false" readonly
+                              placeholder="Properties-Ergebnis…"></textarea>
+
+                    <div class="row">
+                        <button class="btn" id="ypCopy" type="button">Kopieren</button>
+                    </div>
+
+                    <p class="hint" id="ypStatus" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+
+            <details class="details">
+                <summary>Hinweis zu YAML-Spezialfällen</summary>
+                <p class="muted">
+                    Der Konverter ist bewusst leichtgewichtig und offlinefähig. YAML-Features wie Anchors, Tags,
+                    mehrzeilige Block-Scalars oder komplexe Inline-Objekte werden nicht vollständig interpretiert.
+                </p>
+            </details>
         </section>
 
         <!-- TOOL: Regex -->

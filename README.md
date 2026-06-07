@@ -4,6 +4,10 @@ Online Tools für Entwickler.
 
 Demo: https://huluvu424242.github.io/online-tools/
 
+## Mobile-First-Architektur
+
+Die Oberfläche wird mobile-first gestaltet: Basis-Styles optimieren kleine Touch-Viewports, vermeiden horizontales Überlaufen und ergänzen Tablet-/Desktop-Abweichungen nur, wenn sie Bedienbarkeit oder Lesbarkeit verbessern. Die verbindlichen Codex-Hinweise stehen in `AGENTS.md`.
+
 ## Offline-Nutzung
 
 Die Webseite ist vollständig statisch und führt ihre Tools direkt im Browser aus. Nutzereingaben werden nicht an fremde Server gesendet.
@@ -18,6 +22,7 @@ Auf der Startseite gibt es den Button **Offline-ZIP herunterladen**. Damit wird 
 
 - Cron Erklärer
 - Base64 Codierer/Dekodierer
+- YAML/Properties Konverter für Java-nahe Konfigurationen
 - Regex Checker mit lokaler ReDoS-Heuristik
 - Regex Vergleich für eine eingeschränkte reguläre Teilmenge
 
