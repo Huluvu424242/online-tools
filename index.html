@@ -165,12 +165,13 @@
                 </div>
 
                 <div class="panel">
-                    <div class="row space-between">
-                        <label for="b64Output">Ausgabe</label>
-                        <button class="btn" id="b64Copy" type="button">Kopieren</button>
-                    </div>
+                    <label for="b64Output">Ausgabe</label>
                     <textarea id="b64Output" rows="8" spellcheck="false" readonly
                               placeholder="Ergebnis…"></textarea>
+
+                    <div class="row">
+                        <button class="btn" id="b64Copy" type="button">Kopieren</button>
+                    </div>
 
                     <p class="hint" id="b64Status" role="status" aria-live="polite"></p>
                 </div>
