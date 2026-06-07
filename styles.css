@@ -410,8 +410,21 @@ label:not(.search):not(.consent) {
     height: 20px;
 }
 
+.regex-flags {
+    display: grid;
+    grid-template-columns: repeat(6, 44px);
+    gap: 6px;
+    justify-content: start;
+    overflow-x: auto;
+}
+
 .regex-flags label:not(.consent) {
+    display: inline-flex;
+    justify-content: center;
     flex: 0 0 auto;
+    min-width: 44px;
+    padding-inline: 4px;
+    gap: 4px;
     white-space: nowrap;
 }
 
