@@ -18,12 +18,14 @@ function getTextCodec(algorithm) {
     const codecs = {
         base64: {
             name: "Base64",
+            description: "Base64 wandelt UTF-8-Text in eine ASCII-Zeichenfolge um und kann diese wieder zurückdekodieren.",
             encode: utf8ToB64,
             decode: b64ToUtf8,
             decodeInput: (value) => value.trim()
         },
         rot13: {
             name: "ROT13",
+            description: "ROT13 ist symmetrisch: Kodieren und Dekodieren liefern dieselbe Buchstabenrotation.",
             encode: (value) => window.OnlineToolsRot13.encode(value),
             decode: (value) => window.OnlineToolsRot13.decode(value),
             decodeInput: (value) => value
@@ -38,6 +40,7 @@ function initBase64() {
     const input = $("#b64Input");
     const output = $("#b64Output");
     const status = $("#b64Status");
+    const algorithmHint = $("#b64AlgorithmHint");
 
     const encodeBtn = $("#b64Encode");
     const decodeBtn = $("#b64Decode");
@@ -45,7 +48,7 @@ function initBase64() {
     const clearBtn = $("#b64Clear");
     const copyBtn = $("#b64Copy");
 
-    if (!algorithm || !input || !output || !status || !encodeBtn || !decodeBtn || !swapBtn || !clearBtn || !copyBtn) return;
+    if (!algorithm || !input || !output || !status || !algorithmHint || !encodeBtn || !decodeBtn || !swapBtn || !clearBtn || !copyBtn) return;
 
     const setStatus = (msg, isError = false) => {
         status.textContent = msg;
@@ -78,8 +81,16 @@ function initBase64() {
         }
     });
 
-    algorithm.addEventListener("change", () => {
+    const syncAlgorithmDescription = () => {
         const codec = selectedCodec();
+        algorithmHint.textContent = codec.description;
+        return codec;
+    };
+
+    syncAlgorithmDescription();
+
+    algorithm.addEventListener("change", () => {
+        const codec = syncAlgorithmDescription();
         setStatus(`Algorithmus: ${codec.name}.`);
         setAnnounce(`Algorithmus ${codec.name} ausgewählt`);
     });
