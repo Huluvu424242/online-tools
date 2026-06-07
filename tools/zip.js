@@ -9,6 +9,7 @@ const OFFLINE_PACKAGE_FILES = [
     "tools/base64.js",
     "tools/rot13.js",
     "tools/zip.js",
+    "tools/yaml-properties.js",
     "tools/regex-checker.js",
     "tools/regex-compare.js",
     "PoweredByKI.png",

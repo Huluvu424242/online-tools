@@ -12,6 +12,7 @@
     <script defer src="tools/base64.js"></script>
     <script defer src="tools/rot13.js"></script>
     <script defer src="tools/zip.js"></script>
+    <script defer src="tools/yaml-properties.js"></script>
     <script defer src="tools/regex-checker.js"></script>
     <script defer src="tools/regex-compare.js"></script>
     <script defer src="app.js"></script>
@@ -176,6 +177,65 @@
                     <p class="hint" id="b64Status" role="status" aria-live="polite"></p>
                 </div>
             </div>
+        </section>
+
+        <!-- TOOL: YAML/Properties Konverter -->
+        <section class="tool" id="tool-yaml-properties" data-name="YAML Properties Konverter" data-nav="Konverter"
+                 data-tags="yaml yml properties java spring konfiguration converter konverter">
+            <header class="tool-header">
+                <h1>YAML/Properties Konverter</h1>
+                <p class="muted">Konvertiert Java-nahe Konfigurationen zwischen YAML und .properties – vollständig lokal im Browser.</p>
+            </header>
+
+            <div class="grid encoder-grid">
+                <div class="panel encoder-settings">
+                    <label for="ypMode">Konvertierungsrichtung</label>
+                    <select id="ypMode" aria-describedby="ypModeHint">
+                        <option value="yamlToProperties">YAML → Properties</option>
+                        <option value="propertiesToYaml">Properties → YAML</option>
+                    </select>
+                    <p class="hint" id="ypModeHint">
+                        Unterstützt gängige verschachtelte Java-/Spring-Konfigurationen, einfache Listen und skalare Werte.
+                    </p>
+                </div>
+
+                <div class="panel">
+                    <label for="ypInput" id="ypInputLabel">Eingabe (YAML)</label>
+                    <textarea id="ypInput" rows="10" spellcheck="false"
+                              placeholder="server:
+  port: 8080
+spring:
+  application:
+    name: demo"></textarea>
+
+                    <div class="row">
+                        <button class="btn primary" id="ypConvert" type="button">Konvertieren</button>
+                        <button class="btn" id="ypExample" type="button">Beispiel</button>
+                        <button class="btn" id="ypSwap" type="button">↔ Tauschen</button>
+                        <button class="btn" id="ypClear" type="button">Leeren</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <label for="ypOutput" id="ypOutputLabel">Ausgabe (Properties)</label>
+                    <textarea id="ypOutput" rows="10" spellcheck="false" readonly
+                              placeholder="Properties-Ergebnis…"></textarea>
+
+                    <div class="row">
+                        <button class="btn" id="ypCopy" type="button">Kopieren</button>
+                    </div>
+
+                    <p class="hint" id="ypStatus" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+
+            <details class="details">
+                <summary>Hinweis zu YAML-Spezialfällen</summary>
+                <p class="muted">
+                    Der Konverter ist bewusst leichtgewichtig und offlinefähig. YAML-Features wie Anchors, Tags,
+                    mehrzeilige Block-Scalars oder komplexe Inline-Objekte werden nicht vollständig interpretiert.
+                </p>
+            </details>
         </section>
 
         <!-- TOOL: Regex -->
