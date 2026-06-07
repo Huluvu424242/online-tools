@@ -195,6 +195,7 @@ const OFFLINE_PACKAGE_FILES = [
     "PoweredByKI.png",
     "PoweredByKI.xcf",
     "README.md",
+    "AGENTS.md",
     "LICENSE",
     "ATTRIBUTION"
 ];
