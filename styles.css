@@ -40,6 +40,7 @@ html, body {
 
 body {
     margin: 0;
+    overflow-x: hidden;
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     background: var(--bg);
     color: var(--text);
@@ -53,6 +54,14 @@ a {
 
 a:hover {
     text-decoration: underline;
+}
+
+:where(p, li, h1, h2, h3, label, summary, code, .hint, .muted) {
+    overflow-wrap: anywhere;
+}
+
+code {
+    word-break: break-word;
 }
 
 .sr-only {
@@ -148,10 +157,12 @@ a:hover {
 }
 
 .brand-powered {
-    height: 42px;
+    height: clamp(32px, 10vw, 42px);
+    max-width: 30vw;
     width: auto;
     display: block;
     flex: 0 0 auto;
+    object-fit: contain;
 }
 
 .header-right {
@@ -292,6 +303,7 @@ kbd {
     border-radius: var(--radius);
     background: var(--surface);
     box-shadow: var(--shadow);
+    scroll-margin-top: 180px;
 }
 
 .tool-header h1 {
@@ -358,13 +370,17 @@ label:not(.search):not(.consent) {
     color: var(--muted);
 }
 
-.option-group label {
+.option-group label:not(.consent) {
     margin: 0;
     font-weight: 700;
     color: var(--muted);
     display: inline-flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
+    min-height: 44px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
 }
 
 .option-group input[type="checkbox"] {
@@ -490,6 +506,9 @@ textarea:focus, input:focus {
     background: var(--surface);
     color: var(--text);
     cursor: pointer;
+    text-align: center;
+    font-weight: 700;
+    touch-action: manipulation;
 }
 
 .btn:hover {
@@ -549,7 +568,19 @@ textarea:focus, input:focus {
     background: var(--surface);
     padding: 12px;
     min-height: 120px;
+    max-width: 100%;
     overflow: auto;
+    overflow-wrap: anywhere;
+    -webkit-overflow-scrolling: touch;
+}
+
+.result ul {
+    margin: 0;
+    padding-inline-start: 1.2rem;
+}
+
+.result li + li {
+    margin-top: 6px;
 }
 
 .hint {
@@ -586,6 +617,27 @@ mark {
 /* Footer */
 .site-footer {
     padding: 10px 4px;
+}
+
+
+@media (max-width: 380px) {
+    .brand-subtitle {
+        display: none;
+    }
+
+    .brand-powered {
+        max-width: 34vw;
+    }
+
+    .content,
+    .site-header,
+    .sidebar {
+        padding-inline: 10px;
+    }
+
+    .tool {
+        padding: 12px;
+    }
 }
 
 @media (min-width: 720px) {
@@ -654,6 +706,7 @@ mark {
     .tool {
         margin: 18px 0 28px 0;
         padding: 18px;
+        scroll-margin-top: 110px;
     }
 
     .panel {
@@ -675,6 +728,11 @@ mark {
     }
 
     .sidebar {
+        position: sticky;
+        top: 86px;
+        align-self: start;
+        max-height: calc(100vh - 86px);
+        overflow: auto;
         padding: 18px;
         border-right: 1px solid var(--border);
         border-bottom: none;
