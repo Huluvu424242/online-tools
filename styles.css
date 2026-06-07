@@ -848,7 +848,7 @@ mark {
     }
 }
 
-/* De-/Encodierer: Algorithmusauswahl über Eingabe und Ausgabe platzieren. */
+/* De-/Encoder: Algorithmusauswahl über Eingabe und Ausgabe platzieren. */
 .encoder-settings {
     display: grid;
     gap: 8px;
