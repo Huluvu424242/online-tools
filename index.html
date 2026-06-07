@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="styles.css"/>
     <script defer src="tools/cron-erklaerer.js"></script>
     <script defer src="tools/base64.js"></script>
+    <script defer src="tools/rot13.js"></script>
+    <script defer src="tools/zip.js"></script>
     <script defer src="tools/regex-checker.js"></script>
     <script defer src="tools/regex-compare.js"></script>
     <script defer src="app.js"></script>
@@ -130,18 +132,27 @@
         </section>
 
         <!-- TOOL: Base64 -->
-        <section class="tool" id="tool-base64" data-name="Base64" data-nav="Base64 Codierer"
-                 data-tags="base64 encode decode">
+        <section class="tool" id="tool-base64" data-name="Base64 ROT13" data-nav="Base64/ROT13 Codierer"
+                 data-tags="base64 rot13 encode decode verschlüsselung codierung">
             <header class="tool-header">
-                <h1>Base64</h1>
-                <p class="muted">Text Base64-kodieren oder dekodieren (UTF-8).</p>
+                <h1>Base64/ROT13</h1>
+                <p class="muted">Text per auswählbarem Algorithmus kodieren oder dekodieren.</p>
             </header>
 
             <div class="grid">
                 <div class="panel">
+                    <label for="b64Algorithm">Algorithmus</label>
+                    <select id="b64Algorithm" aria-describedby="b64AlgorithmHint">
+                        <option value="base64">Base64 (UTF-8)</option>
+                        <option value="rot13">ROT13</option>
+                    </select>
+                    <p class="hint" id="b64AlgorithmHint">
+                        ROT13 ist symmetrisch: Kodieren und Dekodieren liefern dieselbe Buchstabenrotation.
+                    </p>
+
                     <label for="b64Input">Eingabe</label>
                     <textarea id="b64Input" rows="8" spellcheck="false"
-                              placeholder="Text oder Base64 hier einfügen…"></textarea>
+                              placeholder="Text oder kodierte Daten hier einfügen…"></textarea>
 
                     <div class="row">
                         <button class="btn primary" id="b64Encode" type="button">Kodieren</button>
