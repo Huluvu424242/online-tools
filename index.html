@@ -40,12 +40,16 @@
     </div>
 
     <div class="header-right">
-        <label class="search" for="toolSearch">
-            <span class="sr-only">Tools durchsuchen</span>
-            <input id="toolSearch" type="search" inputmode="search" autocomplete="off"
-                   placeholder="Tool suchen… (z.B. base64, regex, cron)"/>
-            <span class="search-hint" aria-hidden="true">Ctrl/⌘ K</span>
-        </label>
+        <div class="search-group">
+            <label class="search" for="toolSearch">
+                <span class="sr-only">Tools durchsuchen</span>
+                <input id="toolSearch" type="search" inputmode="search" autocomplete="off"
+                       placeholder="Tool suchen… (z.B. base64, regex, cron)"/>
+            </label>
+            <p class="search-keyboard-help">
+                Tastatur: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> Suche · <kbd>Esc</kbd> Reset
+            </p>
+        </div>
 
         <button id="themeToggle" class="btn" type="button" aria-pressed="false">
             <span class="btn-icon" aria-hidden="true">🌓</span>
@@ -65,11 +69,6 @@
 
         <ul id="toolNav" class="nav-list"></ul>
 
-        <div class="sidebar-footer">
-            <p class="muted">
-                Tastatur: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> Suche · <kbd>Esc</kbd> Reset
-            </p>
-        </div>
     </nav>
 
     <main id="main" class="content" role="main" tabindex="-1">

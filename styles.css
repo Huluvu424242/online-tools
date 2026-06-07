@@ -173,13 +173,20 @@ code {
 }
 
 /* Search */
+.search-group {
+    display: grid;
+    gap: 6px;
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
 .search {
     position: relative;
     display: flex;
     align-items: center;
-    grid-column: 1 / -1;
     margin: 0;
     font-weight: 400;
+    min-width: 0;
 }
 
 .search input {
@@ -199,8 +206,12 @@ code {
     border-color: var(--accent);
 }
 
-.search-hint {
-    display: none;
+.search-keyboard-help {
+    margin: 0;
+    color: var(--muted);
+    font-size: .85rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
 /* ===== Layout ===== */
@@ -274,10 +285,6 @@ code {
 .nav-link[aria-current="true"] {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(110, 168, 254, .18);
-}
-
-.sidebar-footer {
-    display: none;
 }
 
 kbd {
@@ -683,32 +690,26 @@ mark {
         align-items: flex-end;
     }
 
+    .search-group {
+        width: min(42vw, 520px);
+        max-width: 520px;
+        align-self: flex-end;
+        flex: 0 1 520px;
+    }
+
     .search {
         display: inline-flex;
-        align-self: flex-end;
     }
 
     .search input {
-        width: min(42vw, 520px);
-        max-width: 520px;
-        min-height: 42px;
-        padding: 10px 40px 10px 12px;
+        min-height: 44px;
+        padding: 10px 12px;
         border-radius: 999px;
     }
 
-    .search-hint {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        display: inline-block;
-        font-size: .8rem;
-        color: var(--muted);
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--surface-2);
-        pointer-events: none;
+    .search-keyboard-help {
+        padding-inline: 4px;
+        font-size: .82rem;
     }
 
     .brand-subtitle {
@@ -769,11 +770,6 @@ mark {
         min-width: 0;
         border-radius: 12px;
         white-space: normal;
-    }
-
-    .sidebar-footer {
-        display: block;
-        margin-top: 16px;
     }
 
     .content {
