@@ -836,3 +836,23 @@ mark {
         justify-items: end;
     }
 }
+
+/* De-/Encodierer: Algorithmusauswahl über Eingabe und Ausgabe platzieren. */
+.encoder-settings {
+    display: grid;
+    gap: 8px;
+}
+
+.encoder-settings label:not(.search):not(.consent) {
+    margin-top: 0;
+}
+
+.encoder-settings .hint {
+    margin-top: 0;
+}
+
+@media (min-width: 980px) {
+    .encoder-settings {
+        grid-column: 1 / -1;
+    }
+}
