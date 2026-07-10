@@ -149,6 +149,7 @@ function escapePropertyPart(value) {
 }
 
 function escapePropertyValue(value) {
+    // Die Reihenfolge ist wichtig!!!
     return String(value)
         .replace(/\\/g, "\\\\")
         .replace(/\n/g, "\\n")
