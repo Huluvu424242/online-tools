@@ -57,7 +57,7 @@ function initRegex() {
     }
 
     function hasOverlappingAlternation(patternText) {
-        const groups = patternText.match(/\((?:\\.|[^()])+\)\s*(?:[+*]|\{\s*\d*\s*,)/g) || [];
+        const groups = patternText.match(/\((?:\\.|[^()\\])+\)\s*(?:[+*]|\{\s*\d*\s*,)/g) || [];
 
         return groups.some((group) => {
             const body = group.replace(/^\(/, "").replace(/\)\s*(?:[+*]|\{\s*\d*\s*,).*$/, "");
