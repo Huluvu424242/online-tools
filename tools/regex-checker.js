@@ -53,7 +53,7 @@ function initRegex() {
     }
 
     function hasAmbiguousWildcardRepeat(patternText) {
-        return /(?:\.\*|\.\+)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText) || /\((?:\\.|[^()])*\.\*(?:\\.|[^()])*\)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText);
+        return /(?:\.\*|\.\+)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText) || /\((?:\\.|[^()\\])*\.\*(?:\\.|[^()\\])*\)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText);
     }
 
     function hasOverlappingAlternation(patternText) {
