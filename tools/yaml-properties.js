@@ -149,7 +149,11 @@ function escapePropertyPart(value) {
 }
 
 function escapePropertyValue(value) {
-    return escapePropertyPart(value)
+    return String(value)
+        .replace(/\\/g, "\\\\")
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "\\r")
+        .replace(/\t/g, "\\t")
         .replace(/^ /, "\\ ")
         .replace(/([:=#!])/g, "\\$1");
 }
