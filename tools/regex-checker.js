@@ -49,7 +49,7 @@ function initRegex() {
     }
 
     function hasNestedQuantifier(patternText) {
-        return /\((?:\\.|[^()])*[+*](?:\\.|[^()])*\)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText);
+        return /\((?:\\.|[^()\\])*[+*](?:\\.|[^()\\])*\)\s*(?:[+*?]|\{\s*\d*\s*,)/.test(patternText);
     }
 
     function hasAmbiguousWildcardRepeat(patternText) {
