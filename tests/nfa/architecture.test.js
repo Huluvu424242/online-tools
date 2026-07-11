@@ -6,7 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const repositoryRoot = path.resolve(__dirname, "..");
+const repositoryRoot = path.resolve(__dirname, "..", "..");
 const productionSourcesPath = path.join(repositoryRoot, "production-sources.json");
 const productionSources = JSON.parse(fs.readFileSync(productionSourcesPath, "utf8"));
 
@@ -152,12 +152,34 @@ test("index.html enthält weiterhin die zentralen Tool-Navigationen", () => {
     assert.match(html, /<h1>Konverter<\/h1>/);
 });
 
+test("Tests sind nach fachlichen und nicht-fachlichen Suites ohne zentrale Dateiliste organisiert", () => {
+    const testsRoot = path.join(repositoryRoot, "tests");
+    const topLevelTestFiles = fs.readdirSync(testsRoot, {withFileTypes: true})
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".test.js"))
+        .map((entry) => entry.name);
+
+    assert.deepEqual(topLevelTestFiles, []);
+
+    const {discoverTestFiles} = require(path.join(testsRoot, "run-suite.js"));
+    const fnaFiles = discoverTestFiles(path.join(testsRoot, "fna"))
+        .map((file) => normalizeRepositoryPath(path.relative(repositoryRoot, file)));
+    const nfaFiles = discoverTestFiles(path.join(testsRoot, "nfa"))
+        .map((file) => normalizeRepositoryPath(path.relative(repositoryRoot, file)));
+
+    assert.ok(fnaFiles.length >= 1, "fachliche Tests fehlen");
+    assert.ok(nfaFiles.includes("tests/nfa/architecture.test.js"));
+    assert.equal(fnaFiles.some((file) => file.includes("architecture")), false);
+});
+
+
 test("package.json verwaltet ausschließlich Entwicklungs- und Testwerkzeuge", () => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "package.json"), "utf8"));
 
     assert.equal(packageJson.private, true);
     assert.deepEqual(Object.keys(packageJson.dependencies || {}), []);
     assert.equal(packageJson.scripts.test, "node tests/run-all.js");
+    assert.equal(packageJson.scripts["test:fna"], "node tests/run-fna.js");
+    assert.equal(packageJson.scripts["test:nfa"], "node tests/run-nfa.js");
     assert.equal(packageJson.scripts.mutation, "stryker run");
     assert.ok(packageJson.devDependencies["@stryker-mutator/core"]);
 });
@@ -167,7 +189,7 @@ test("Stryker mutiert produktive Tool-Logik explizit und erzwingt QS-Schwellen",
     const config = require(configPath);
 
     assert.equal(config.testRunner, "command");
-    assert.equal(config.commandRunner.command, "node tests/run-all.js");
+    assert.equal(config.commandRunner.command, "node tests/run-nfa.js");
     assert.equal(config.coverageAnalysis, "off");
     assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 70});
     assert.ok(config.reporters.includes("clear-text"));
