@@ -128,19 +128,21 @@ test("Browsercode aus der zentralen Produktionsquellen-Liste referenziert weder 
 });
 
 
-test("Offline-ZIP-Liste enthält alle eingecheckten Repository-Dateien", () => {
-    const zipSource = fs.readFileSync(path.join(repositoryRoot, "tools", "zip.js"), "utf8");
-    const listMatch = zipSource.match(/const OFFLINE_PACKAGE_FILES = \[([\s\S]*?)\];/);
-    assert.ok(listMatch, "OFFLINE_PACKAGE_FILES fehlt");
-
-    const offlineFiles = [...listMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+test("Offline-ZIP-Manifest wird automatisch aus den eingecheckten Repository-Dateien erzeugt", () => {
+    const manifestPath = path.join(repositoryRoot, "offline-package-files.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     const trackedFiles = execFileSync("git", ["ls-files"], {cwd: repositoryRoot, encoding: "utf8"})
         .trim()
         .split("\n")
         .filter(Boolean);
 
-    const expectedFiles = [...new Set([...trackedFiles, "production-sources.json"])].sort();
-    assert.deepEqual(offlineFiles, expectedFiles);
+    const expectedFiles = [...new Set([...trackedFiles, "offline-package-files.json"])].sort();
+    assert.equal(manifest.generatedFrom, "git ls-files");
+    assert.deepEqual(manifest.files, expectedFiles);
+
+    const zipSource = fs.readFileSync(path.join(repositoryRoot, "tools", "zip.js"), "utf8");
+    assert.doesNotMatch(zipSource, /OFFLINE_PACKAGE_FILES\s*=\s*\[/);
+    assert.match(zipSource, /OFFLINE_PACKAGE_MANIFEST\s*=\s*"offline-package-files\.json"/);
 });
 
 test("index.html enthält weiterhin die zentralen Tool-Navigationen", () => {
@@ -181,6 +183,7 @@ test("package.json verwaltet ausschließlich Entwicklungs- und Testwerkzeuge", (
     assert.equal(packageJson.scripts["test:fna"], "node tests/run-fna.js");
     assert.equal(packageJson.scripts["test:nfa"], "node tests/run-nfa.js");
     assert.equal(packageJson.scripts.mutation, "stryker run");
+    assert.equal(packageJson.scripts["update:offline-manifest"], "node scripts/update-offline-manifest.js");
     assert.ok(packageJson.devDependencies["@stryker-mutator/core"]);
 });
 

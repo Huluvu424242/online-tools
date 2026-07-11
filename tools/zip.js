@@ -1,50 +1,39 @@
 "use strict";
 
 /* ========= Offline ZIP download ========= */
-const OFFLINE_PACKAGE_FILES = [
-    ".github/workflows/tests.yml",
-    ".gitignore",
-    "AGENTS.md",
-    "ATTRIBUTION",
-    "CHANGE.log",
-    "LICENSE",
-    "PoweredByKI.png",
-    "PoweredByKI.xcf",
-    "README.md",
-    "SECURITY.de.md",
-    "SECURITY.md",
-    "VERSION",
-    "app.js",
-    "docs/git-feature-workflow.md",
-    "docs/git-gesamt-workflow.md",
-    "docs/git-hotfix-workflow.md",
-    "docs/git-release-workflow.md",
-    "docs/git-workflow-geschuetzte-branches.pdf",
-    "index.html",
-    "package.json",
-    "production-sources.json",
-    "stryker.conf.cjs",
-    "styles.css",
-    "tests/README.md",
-    "tests/fna/regex-layout.test.js",
-    "tests/fna/yaml-properties-conversion.test.js",
-    "tests/fna/yaml-properties-escaping.test.js",
-    "tests/fna/yaml-properties-ui.test.js",
-    "tests/fna/yaml-properties.test.js",
-    "tests/helpers/yaml-properties-harness.js",
-    "tests/nfa/architecture.test.js",
-    "tests/run-all.js",
-    "tests/run-fna.js",
-    "tests/run-nfa.js",
-    "tests/run-suite.js",
-    "tools/base64.js",
-    "tools/cron-erklaerer.js",
-    "tools/regex-checker.js",
-    "tools/regex-compare.js",
-    "tools/rot13.js",
-    "tools/yaml-properties.js",
-    "tools/zip.js"
-];
+const OFFLINE_PACKAGE_MANIFEST = "offline-package-files.json";
+
+function normalizeOfflineManifestPath(path) {
+    if (typeof path !== "string") {
+        throw new Error("Offline-Manifest enthält einen ungültigen Dateinamen");
+    }
+
+    const normalized = path.replaceAll("\\", "/");
+
+    if (!normalized || normalized.startsWith("/") || normalized.split("/").includes("..") || normalized === ".") {
+        throw new Error(`Offline-Manifest enthält einen unsicheren Dateinamen: ${path}`);
+    }
+
+    return normalized;
+}
+
+function parseOfflinePackageManifest(manifest) {
+    if (!manifest || !Array.isArray(manifest.files)) {
+        throw new Error("Offline-Manifest enthält keine Dateiliste");
+    }
+
+    return [...new Set(manifest.files.map(normalizeOfflineManifestPath))].sort();
+}
+
+async function loadOfflinePackageFiles() {
+    const response = await fetch(new URL(OFFLINE_PACKAGE_MANIFEST, document.baseURI), {cache: "no-store"});
+
+    if (!response.ok) {
+        throw new Error(`${OFFLINE_PACKAGE_MANIFEST}: HTTP ${response.status}`);
+    }
+
+    return parseOfflinePackageManifest(await response.json());
+}
 
 let crcTable;
 
@@ -184,8 +173,9 @@ function initOfflineZipDownload() {
 
         try {
             const files = [];
+            const packageFiles = await loadOfflinePackageFiles();
 
-            for (const path of OFFLINE_PACKAGE_FILES) {
+            for (const path of packageFiles) {
                 files.push({path, data: await readPackageFile(path)});
             }
 
@@ -213,5 +203,7 @@ function initOfflineZipDownload() {
 
 window.OnlineToolsZip = {
     createZip,
-    initOfflineZipDownload
+    initOfflineZipDownload,
+    loadOfflinePackageFiles,
+    parseOfflinePackageManifest
 };
