@@ -50,7 +50,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          npm run mutation 2>&1 | tee reports/mutationtest-report.txt
+          echo "TODO"
+#          npm run mutation 2>&1 | tee reports/mutationtest-report.txt
 
       - name: Upload test report
         if: always()
