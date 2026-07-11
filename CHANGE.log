@@ -1,0 +1,88 @@
+# Change Log
+
+All notable changes to this project are documented in this file.
+
+The project currently has no tagged releases. Entries therefore follow the dates on which changes were integrated. New entries should be added to the `Unreleased` section and moved into a dated section when they are published on `master`.
+
+## Unreleased
+
+### Added
+
+- Central change log for user-visible features, security fixes and relevant maintenance work.
+
+## 2026-07-11
+
+### Added
+
+- Automated execution of the dependency-free JavaScript regression test suite in the project workflow.
+
+### Changed
+
+- Established the `develop` branch as the integration stage before changes are released to `master`.
+
+## 2026-07-10
+
+### Security
+
+- Hardened the local regular-expression safety heuristics against inefficient and potentially excessive backtracking.
+- Reworked ambiguous repeated alternatives so escaped characters and ordinary characters are matched by disjoint branches.
+- Added documentation for the full regular-expression checks and resolved the associated CodeQL findings.
+
+## 2026-06-07
+
+### Added
+
+- YAML/Properties converter for Java-style configuration files.
+- Dependency-free Node.js regression tests for the converter and responsive regex controls.
+- ROT13 as an additional encoding and decoding algorithm.
+- Browser-generated offline ZIP containing the complete static application.
+- `AGENTS.md` with binding mobile-first and offline architecture guidelines.
+- Compact navigation hints for tools.
+
+### Changed
+
+- Reworked the interface to follow a mobile-first layout with touch-friendly controls and improved handling of narrow viewports.
+- Improved the Base64/ROT13 interface with a dedicated algorithm selector and explanatory descriptions.
+- Renamed the YAML/Properties tool to the more general label `Konverter`.
+- Improved converter behavior when changing direction, swapping input and output, clearing fields or processing empty input.
+- Moved the keyboard shortcut hint next to the search field.
+- Split offline ZIP generation into a dedicated module.
+- Updated the README with offline usage, privacy guarantees, included tools and test instructions.
+
+### Security
+
+- Removed remote regular-expression checks and runtime CDN dependencies.
+- Replaced external ReDoS analysis with local browser-based heuristics.
+- Ensured that regular expressions and test data remain on the user's device.
+
+### Accessibility
+
+- Improved status announcements and feedback in the converter.
+- Increased touch target sizes and improved wrapping and scrolling for long content.
+- Linked the site brand to the GitHub repository with appropriate accessible labeling.
+
+## 2026-03-08
+
+### Fixed
+
+- Corrected and stabilized the regular-expression tools after their initial introduction.
+
+## 2026-03-06
+
+### Added
+
+- Regular-expression comparison tool for a deliberately restricted regular subset.
+
+## 2026-03-04
+
+### Added
+
+- Initial static application structure and user interface.
+- Cron expression explainer.
+- Base64 encoder and decoder.
+- Regular-expression checker.
+- GitHub Pages compatible, browser-native operation without a build step.
+
+---
+
+This change log is maintained in reverse chronological order and focuses on changes relevant to users, security and project operation. Minor wording, formatting and internal refactoring changes may be omitted.
