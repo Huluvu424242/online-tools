@@ -51,12 +51,21 @@ function unquoteYamlScalar(value) {
             return inner.replace(/''/g, "'");
         }
 
-        return inner
-            .replace(/\\n/g, "\n")
-            .replace(/\\t/g, "\t")
-            .replace(/\\r/g, "\r")
-            .replace(/\\"/g, "\"")
-            .replace(/\\\\/g, "\\");
+        let result = "";
+        for (let i = 0; i < inner.length; i++) {
+            const char = inner[i];
+            if (char !== "\\" || i === inner.length - 1) {
+                result += char;
+                continue;
+            }
+
+            const escaped = inner[i + 1];
+            const replacements = {n: "\n", t: "\t", r: "\r", "\\": "\\", "\"": "\""};
+            result += Object.prototype.hasOwnProperty.call(replacements, escaped) ? replacements[escaped] : escaped;
+            i += 1;
+        }
+
+        return result;
     }
 
     return trimmed;
@@ -141,22 +150,28 @@ function yamlToProperties(yaml) {
 }
 
 function escapePropertyPart(value) {
+    // Java-.properties-Schlüssel: Backslash zuerst, danach alle Zeichen mit
+    // struktureller Bedeutung im Schlüsselkontext maskieren.
     return String(value)
         .replace(/\\/g, "\\\\")
         .replace(/\n/g, "\\n")
         .replace(/\r/g, "\\r")
-        .replace(/\t/g, "\\t");
+        .replace(/\t/g, "\\t")
+        .replace(/([\s:=#!])/g, "\\$1");
 }
 
 function escapePropertyValue(value) {
-    // Die Reihenfolge ist wichtig!!!
+    // Java-.properties-Werte: Backslash zuerst maskieren; Zeilenumbrüche und
+    // führende Kommentarzeichen dürfen keine neue Struktur erzeugen.
     return String(value)
         .replace(/\\/g, "\\\\")
         .replace(/\n/g, "\\n")
         .replace(/\r/g, "\\r")
         .replace(/\t/g, "\\t")
         .replace(/^ /, "\\ ")
-        .replace(/([:=#!])/g, "\\$1");
+        .replace(/([#!])/g, "\\$1")
+        .replace(/=/g, "\\=")
+        .replace(/:(?!\\)/g, "\\:");
 }
 
 function findPropertySeparator(line) {
@@ -301,17 +316,34 @@ function stringifyYamlNode(node, indent = 0) {
     const spaces = " ".repeat(indent);
 
     if (Array.isArray(node)) {
-        return node.map((item) => {
+        const namedProperties = Object.keys(node).filter((key) => !/^\d+$/.test(key));
+        const namedLines = namedProperties.map((key) => {
+            const value = node[key];
+            const yamlKey = formatYamlKey(key);
+
+            if (isPlainObject(value) || Array.isArray(value)) {
+                const nested = stringifyYamlNode(value, indent + 2);
+                return `${spaces}${yamlKey}:\n${nested}`;
+            }
+
+            return `${spaces}${yamlKey}: ${formatYamlScalar(value ?? "")}`;
+        });
+        const itemLines = node.map((item) => {
             if (isPlainObject(item) || Array.isArray(item)) {
                 const nested = stringifyYamlNode(item, indent + 2);
                 return `${spaces}-\n${nested}`;
             }
 
             return `${spaces}- ${formatYamlScalar(item ?? "")}`;
-        }).join("\n");
+        });
+
+        return [...namedLines, ...itemLines].join("\n");
     }
 
-    return Object.keys(node).map((key) => {
+    const keys = Object.keys(node);
+    const namedKeys = keys.filter((key) => !/^\d+$/.test(key));
+    const numericKeys = keys.filter((key) => /^\d+$/.test(key)).sort((left, right) => Number(left) - Number(right));
+    const namedLines = namedKeys.map((key) => {
         const value = node[key];
         const yamlKey = formatYamlKey(key);
 
@@ -321,7 +353,18 @@ function stringifyYamlNode(node, indent = 0) {
         }
 
         return `${spaces}${yamlKey}: ${formatYamlScalar(value ?? "")}`;
-    }).join("\n");
+    });
+    const numericLines = numericKeys.map((key) => {
+        const value = node[key];
+        if (isPlainObject(value) || Array.isArray(value)) {
+            const nested = stringifyYamlNode(value, indent + 2);
+            return `${spaces}-\n${nested}`;
+        }
+
+        return `${spaces}- ${formatYamlScalar(value ?? "")}`;
+    });
+
+    return [...namedLines, ...numericLines].join("\n");
 }
 
 function propertiesToYaml(properties) {
