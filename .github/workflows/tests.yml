@@ -34,15 +34,23 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Create report directory
         run: mkdir -p reports
 
-      - name: Run regression tests
+      - name: Run regressions tests
         shell: bash
         run: |
           set -o pipefail
-          node tests/run-all.js 2>&1 \
-            | tee reports/yaml-properties-test.txt
+          npm test 2>&1 | tee reports/test-report.txt
+
+      - name: Run mutation tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run mutation 2>&1 | tee reports/mutationtest-report.txt
 
       - name: Upload test report
         if: always()
