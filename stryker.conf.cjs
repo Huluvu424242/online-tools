@@ -1,5 +1,7 @@
 "use strict";
 
+const productionSources = require("./production-sources.json");
+
 /**
  * StrykerJS configuration for the browser-native production JavaScript.
  * Node.js is used only for development-time tests; the application itself
@@ -12,15 +14,7 @@ module.exports = {
         command: "node tests/run-all.js"
     },
     coverageAnalysis: "off",
-    mutate: [
-        "tools/base64.js",
-        "tools/cron-erklaerer.js",
-        "tools/regex-checker.js",
-        "tools/regex-compare.js",
-        "tools/rot13.js",
-        "tools/yaml-properties.js",
-        "tools/zip.js"
-    ],
+    mutate: productionSources.javascriptWithBusinessLogic,
     reporters: ["clear-text", "progress", "html", "json"],
     jsonReporter: {
         fileName: "reports/mutation/mutation.json"

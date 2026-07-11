@@ -36,6 +36,13 @@ Die produktive Anwendung muss jederzeit direkt aus den im Repository enthaltenen
 
 Änderungen, die gegen diese Architektur verstoßen, dürfen nicht umgesetzt werden, ohne dass der Maintainer die Architekturänderung ausdrücklich verlangt.
 
+### Produktive Quellen
+
+* Die Datei `production-sources.json` ist die zentrale Definition dafür, welche Dateien und Verzeichnisse als produktive Quellen der browser-nativen Anwendung gelten.
+* Neue, verschobene oder entfernte produktive HTML-, CSS-, JavaScript- und Asset-Quellen müssen in dieser Datei nachgepflegt werden.
+* Architekturprüfungen, insbesondere Prüfungen auf Node.js-Abhängigkeiten im Browsercode, müssen diese zentrale Liste verwenden und dürfen nicht pauschal Test-, Konfigurations- oder Dokumentationsdateien als Produktivcode behandeln.
+* Die Offline-ZIP-Funktion bleibt davon unabhängig: Sie soll die eingecheckten, für das Repository relevanten Dateien ausliefern und nicht nur die produktiven Quellen aus `production-sources.json`.
+
 ### Zulässige Verwendung von Node.js
 
 Node.js darf ausschließlich als Entwicklungs-, Analyse- und Testwerkzeug verwendet werden.
