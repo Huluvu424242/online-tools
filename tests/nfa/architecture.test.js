@@ -189,7 +189,7 @@ test("Stryker mutiert produktive Tool-Logik explizit und erzwingt QS-Schwellen",
     const config = require(configPath);
 
     assert.equal(config.testRunner, "command");
-    assert.equal(config.commandRunner.command, "node tests/run-nfa.js");
+    assert.equal(config.commandRunner.command, "node tests/run-fna.js");
     assert.equal(config.coverageAnalysis, "off");
     assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 70});
     assert.ok(config.reporters.includes("clear-text"));
