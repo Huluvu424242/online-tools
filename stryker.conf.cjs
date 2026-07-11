@@ -11,7 +11,7 @@ module.exports = {
     packageManager: "npm",
     testRunner: "command",
     commandRunner: {
-        command: "node tests/run-nfa.js"
+        command: "node tests/run-fna.js"
     },
     coverageAnalysis: "off",
     mutate: productionSources.javascriptWithBusinessLogic,
