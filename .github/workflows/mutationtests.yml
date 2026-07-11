@@ -18,11 +18,11 @@ permissions:
 
 concurrency:
   group: tests-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   regression-tests:
-    name: JavaScript regression tests
+    name: JavaScript mutation tests
     runs-on: ubuntu-latest
 
     steps:
@@ -50,8 +50,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          echo "TODO"
-#          npm run mutation 2>&1 | tee reports/mutationtest-report.txt
+          npm run mutation 2>&1 | tee reports/mutationtest-report.txt
 
       - name: Upload test report
         if: always()
