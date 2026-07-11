@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const {execFileSync} = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const {pathToFileURL} = require("node:url");
 const test = require("node:test");
 
 const repositoryRoot = path.resolve(__dirname, "..", "..");
@@ -187,17 +188,26 @@ test("package.json verwaltet ausschließlich Entwicklungs- und Testwerkzeuge", (
     assert.ok(packageJson.devDependencies["@stryker-mutator/core"]);
 });
 
-test("Stryker mutiert produktive Tool-Logik explizit und erzwingt QS-Schwellen", () => {
-    const configPath = path.join(repositoryRoot, "stryker.conf.cjs");
-    const config = require(configPath);
+test("Stryker mutiert produktive Tool-Logik explizit und erzeugt architekturkonforme Reports", async () => {
+    const configPath = path.join(repositoryRoot, "stryker.config.mjs");
+    const {default: config} = await import(pathToFileURL(configPath));
 
     assert.equal(config.testRunner, "command");
     assert.equal(config.commandRunner.command, "node tests/run-fna.js");
     assert.equal(config.coverageAnalysis, "off");
-    assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 70});
-    assert.ok(config.reporters.includes("clear-text"));
-    assert.ok(config.reporters.includes("html"));
-    assert.ok(config.reporters.includes("json"));
+    assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 0});
+    assert.equal(config.timeoutMS, 60_000);
+    assert.equal(config.concurrency, 1);
+    assert.equal(config.cleanTempDir, true);
+    assert.deepEqual(config.reporters, ["html", "json", "clear-text", "progress"]);
+    assert.equal(config.htmlReporter.fileName, "reports/mutation/index.html");
+    assert.equal(config.jsonReporter.fileName, "reports/mutation/mutation.json");
+    assert.deepEqual(config.clearTextReporter, {
+        reportTests: true,
+        reportMutants: true,
+        reportScoreTable: true,
+        skipFull: false
+    });
 
     assert.deepEqual(config.mutate, productionSources.javascriptWithBusinessLogic);
 
