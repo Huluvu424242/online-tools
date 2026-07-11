@@ -1,24 +1,39 @@
 "use strict";
 
 /* ========= Offline ZIP download ========= */
-const OFFLINE_PACKAGE_FILES = [
-    "index.html",
-    "styles.css",
-    "app.js",
-    "tools/cron-erklaerer.js",
-    "tools/base64.js",
-    "tools/rot13.js",
-    "tools/zip.js",
-    "tools/yaml-properties.js",
-    "tools/regex-checker.js",
-    "tools/regex-compare.js",
-    "PoweredByKI.png",
-    "PoweredByKI.xcf",
-    "README.md",
-    "AGENTS.md",
-    "LICENSE",
-    "ATTRIBUTION"
-];
+const OFFLINE_PACKAGE_MANIFEST = "offline-package-files.json";
+
+function normalizeOfflineManifestPath(path) {
+    if (typeof path !== "string") {
+        throw new Error("Offline-Manifest enthält einen ungültigen Dateinamen");
+    }
+
+    const normalized = path.replaceAll("\\", "/");
+
+    if (!normalized || normalized.startsWith("/") || normalized.split("/").includes("..") || normalized === ".") {
+        throw new Error(`Offline-Manifest enthält einen unsicheren Dateinamen: ${path}`);
+    }
+
+    return normalized;
+}
+
+function parseOfflinePackageManifest(manifest) {
+    if (!manifest || !Array.isArray(manifest.files)) {
+        throw new Error("Offline-Manifest enthält keine Dateiliste");
+    }
+
+    return [...new Set(manifest.files.map(normalizeOfflineManifestPath))].sort();
+}
+
+async function loadOfflinePackageFiles() {
+    const response = await fetch(new URL(OFFLINE_PACKAGE_MANIFEST, document.baseURI), {cache: "no-store"});
+
+    if (!response.ok) {
+        throw new Error(`${OFFLINE_PACKAGE_MANIFEST}: HTTP ${response.status}`);
+    }
+
+    return parseOfflinePackageManifest(await response.json());
+}
 
 let crcTable;
 
@@ -158,8 +173,9 @@ function initOfflineZipDownload() {
 
         try {
             const files = [];
+            const packageFiles = await loadOfflinePackageFiles();
 
-            for (const path of OFFLINE_PACKAGE_FILES) {
+            for (const path of packageFiles) {
                 files.push({path, data: await readPackageFile(path)});
             }
 
@@ -187,5 +203,7 @@ function initOfflineZipDownload() {
 
 window.OnlineToolsZip = {
     createZip,
-    initOfflineZipDownload
+    initOfflineZipDownload,
+    loadOfflinePackageFiles,
+    parseOfflinePackageManifest
 };
