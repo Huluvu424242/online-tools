@@ -1,7 +1,6 @@
 # JavaScript-Testsuite
 
-Die Tests verwenden ausschließlich Node.js-Bordmittel. Es sind weder `npm install`
-noch eine `package.json` oder ein Build-Schritt erforderlich.
+Die normalen Regressionstests verwenden ausschließlich Node.js-Bordmittel. Für diese Tests sind weder `npm install` noch ein Build-Schritt erforderlich. Die `package.json` verwaltet ausschließlich Entwicklungs- und Testwerkzeuge; die statische Anwendung bleibt ohne Node.js, Paketinstallation oder Build-Schritt ausführbar.
 
 ## Installation
 
@@ -10,10 +9,16 @@ Dabei wird nur der Ordner `tests` ergänzt beziehungsweise erweitert.
 
 ## Ausführung
 
-Gesamte Suite:
+Gesamte normale Suite:
 
 ```bash
 node tests/run-all.js
+```
+
+Alternativ über das npm-Script für Entwicklungsumgebungen:
+
+```bash
+npm test
 ```
 
 Alternativ direkt mit dem Node-Test-Runner:
@@ -33,6 +38,16 @@ node --test tests/architecture.test.js
 
 Empfohlen wird Node.js 20 oder neuer.
 
+## Mutationstests mit StrykerJS
+
+StrykerJS ist als Entwicklungswerkzeug konfiguriert. Nach der Installation der Dev-Abhängigkeiten kann der vollständige Mutationstestlauf mit folgendem Befehl gestartet werden:
+
+```bash
+npm run mutation
+```
+
+Die Konfiguration liegt in `stryker.conf.cjs`. Sie mutiert die produktiven Tool-Dateien unter `tools/`, nutzt die normale Testsuite als Command-Runner und erzeugt Konsolen-, HTML- und JSON-Reports unter `reports/mutation/`. Temporäre Dateien und Reports sind über `.gitignore` ausgeschlossen und gehören nicht zur produktiven Offline-Anwendung.
+
 ## Enthaltene Testgruppen
 
 - YAML → Properties und Properties → YAML
@@ -43,6 +58,7 @@ Empfohlen wird Node.js 20 oder neuer.
 - UI-Aktionen einschließlich Kopieren, Tauschen und Löschen
 - statische Architektur ohne CDN, Build-Schritt oder Node-Abhängigkeit im Browsercode
 - Prüfung lokaler Ressourcenreferenzen
+- Prüfung der Stryker-Konfiguration, expliziten Mutationsdateien und Schwellenwerte
 
 ## Bewusst offene Fälle
 
@@ -52,23 +68,6 @@ Zwei Tests sind als `TODO` markiert:
 - verlustfreie Darstellung leerer Objekte und Arrays
 
 Sie werden im Bericht angezeigt, lassen die Suite aber nicht fehlschlagen.
-
-## Erwarteter anfänglicher Befund
-
-Die Tests für strukturelle Zeichen in Property-Schlüsseln können mit dem derzeitigen
-Stand des Konverters fehlschlagen. Das ist beabsichtigt: Sie bilden die gewünschte
-sichere Properties-Grammatik ab und machen den noch fehlenden Schlüssel-Encoder
-sichtbar.
-
-Insbesondere werden folgende Ausgaben erwartet:
-
-```properties
-key\ with\ spaces=value
-key\=part=value
-key\:part=value
-\#key=value
-\!key=value
-```
 
 ## GitHub Actions
 
