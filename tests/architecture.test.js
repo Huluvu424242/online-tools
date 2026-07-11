@@ -94,3 +94,41 @@ test("index.html enthält weiterhin die zentralen Tool-Navigationen", () => {
     assert.match(html, /data-name="Konverter"[^>]*data-nav="Konverter"/);
     assert.match(html, /<h1>Konverter<\/h1>/);
 });
+
+test("package.json verwaltet ausschließlich Entwicklungs- und Testwerkzeuge", () => {
+    const packageJson = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "package.json"), "utf8"));
+
+    assert.equal(packageJson.private, true);
+    assert.deepEqual(Object.keys(packageJson.dependencies || {}), []);
+    assert.equal(packageJson.scripts.test, "node tests/run-all.js");
+    assert.equal(packageJson.scripts.mutation, "stryker run");
+    assert.ok(packageJson.devDependencies["@stryker-mutator/core"]);
+});
+
+test("Stryker mutiert produktive Tool-Logik explizit und erzwingt QS-Schwellen", () => {
+    const configPath = path.join(repositoryRoot, "stryker.conf.cjs");
+    const config = require(configPath);
+
+    assert.equal(config.testRunner, "command");
+    assert.equal(config.commandRunner.command, "node tests/run-all.js");
+    assert.equal(config.coverageAnalysis, "off");
+    assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 70});
+    assert.ok(config.reporters.includes("clear-text"));
+    assert.ok(config.reporters.includes("html"));
+    assert.ok(config.reporters.includes("json"));
+
+    const expectedMutations = [
+        "tools/base64.js",
+        "tools/cron-erklaerer.js",
+        "tools/regex-checker.js",
+        "tools/regex-compare.js",
+        "tools/rot13.js",
+        "tools/yaml-properties.js",
+        "tools/zip.js"
+    ];
+    assert.deepEqual(config.mutate, expectedMutations);
+
+    for (const relativeFile of config.mutate) {
+        assert.ok(fs.existsSync(path.join(repositoryRoot, relativeFile)), `${relativeFile} fehlt`);
+    }
+});

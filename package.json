@@ -1,0 +1,16 @@
+{
+  "name": "online-tools-qs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Development and test tooling for the browser-native online-tools application.",
+  "scripts": {
+    "test": "node tests/run-all.js",
+    "mutation": "stryker run"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^8.7.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
