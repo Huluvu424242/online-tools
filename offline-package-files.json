@@ -22,6 +22,7 @@
     "docs/git-workflow-geschuetzte-branches.pdf",
     "index.html",
     "offline-package-files.json",
+    "package-lock.json",
     "package.json",
     "production-sources.json",
     "scripts/update-offline-manifest.js",
