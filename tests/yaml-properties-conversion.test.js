@@ -1,0 +1,150 @@
+"use strict";
+
+const assert = require("node:assert/strict");
+const test = require("node:test");
+
+const {createHarness} = require("./helpers/yaml-properties-harness");
+
+const {sandbox} = createHarness();
+
+test("konvertiert verschachteltes YAML und Arrays nach Properties", () => {
+    const yaml = `spring:
+  application:
+    name: demo-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/demo
+server:
+  port: 8080
+features:
+  - login
+  - audit`;
+
+    const expected = [
+        "spring.application.name=demo-service",
+        "spring.datasource.url=jdbc\\:postgresql\\://localhost\\:5432/demo",
+        "server.port=8080",
+        "features[0]=login",
+        "features[1]=audit"
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), expected);
+});
+
+test("ignoriert YAML-Dokumentmarker, Leerzeilen und Kommentare", () => {
+    const yaml = `---
+# Kommentar
+application:
+  name: demo # Kommentar am Zeilenende
+  text: "Wert # bleibt erhalten"
+...
+`;
+
+    assert.equal(
+        sandbox.yamlToProperties(yaml),
+        [
+            "application.name=demo",
+            "application.text=Wert \\# bleibt erhalten"
+        ].join("\n")
+    );
+});
+
+test("unterstützt einfache Skalare einschließlich null", () => {
+    const yaml = `enabled: true
+port: 8080
+rate: 1.25
+missing: null
+alternateMissing: ~`;
+
+    assert.equal(
+        sandbox.yamlToProperties(yaml),
+        [
+            "enabled=true",
+            "port=8080",
+            "rate=1.25",
+            "missing=",
+            "alternateMissing="
+        ].join("\n")
+    );
+});
+
+test("erhält Unicode-Zeichen", () => {
+    const yaml = `message: "Grüße 世界 😀"`;
+    assert.equal(sandbox.yamlToProperties(yaml), "message=Grüße 世界 😀");
+});
+
+test("unterscheidet echte Kontrollzeichen von literalen Escape-Sequenzen", () => {
+    const yaml = String.raw`actualNewline: "line1\nline2"
+literalSequence: "line1\\nline2"
+tab: "a\tb"`;
+
+    assert.equal(
+        sandbox.yamlToProperties(yaml),
+        [
+            "actualNewline=line1\\nline2",
+            "literalSequence=line1\\\\nline2",
+            "tab=a\\tb"
+        ].join("\n")
+    );
+});
+
+test("leere Eingaben ergeben leere Ausgaben", () => {
+    assert.equal(sandbox.yamlToProperties(""), "");
+    assert.equal(sandbox.propertiesToYaml(""), "");
+});
+
+test("Tabs in YAML-Einrückungen werden mit Zeilennummer abgelehnt", () => {
+    assert.throws(
+        () => sandbox.yamlToProperties("application:\n\tname: demo"),
+        /Zeile 2: Tabs in Einrückungen/
+    );
+});
+
+test("leere YAML-Schlüssel werden abgelehnt", () => {
+    assert.throws(
+        () => sandbox.yamlToProperties(": value"),
+        /Leerer YAML-Schlüssel/
+    );
+});
+
+test("Properties werden als Strings in YAML ausgegeben", () => {
+    const yaml = sandbox.propertiesToYaml([
+        "enabled=true",
+        "port=8080",
+        "rate=1.25",
+        "empty="
+    ].join("\n"));
+
+    assert.match(yaml, /^enabled: "true"$/m);
+    assert.match(yaml, /^port: "8080"$/m);
+    assert.match(yaml, /^rate: "1.25"$/m);
+    assert.match(yaml, /^empty: ""$/m);
+});
+
+test("Properties-Arrays werden in YAML-Listen umgewandelt", () => {
+    const yaml = sandbox.propertiesToYaml([
+        "features[0]=login",
+        "features[1]=audit"
+    ].join("\n"));
+
+    assert.equal(yaml, "features:\n  - login\n  - audit");
+});
+
+test("YAML-Properties-YAML-Roundtrip erhält die fachlichen Werte", () => {
+    const originalYaml = String.raw`application:
+  name: demo
+  path: "C:\\temp\\demo"
+  message: "Hallo\nWelt"
+  enabled: true
+  tags:
+  - alpha
+  - beta`;
+
+    const properties = sandbox.yamlToProperties(originalYaml);
+    const convertedYaml = sandbox.propertiesToYaml(properties);
+    const secondProperties = sandbox.yamlToProperties(convertedYaml);
+
+    assert.equal(secondProperties, properties);
+});
+
+test.todo("YAML Block-Scalars mit | und > fachlich korrekt unterstützen");
+test.todo("leere YAML-Objekte und leere Arrays verlustfrei darstellen");

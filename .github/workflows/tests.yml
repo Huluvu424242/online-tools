@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          node tests/yaml-properties.test.js 2>&1 \
+          node tests/run-all.js 2>&1 \
             | tee reports/yaml-properties-test.txt
 
       - name: Upload test report
