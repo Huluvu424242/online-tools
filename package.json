@@ -11,7 +11,7 @@
     "update:offline-manifest": "node scripts/update-offline-manifest.js"
   },
   "devDependencies": {
-    "@stryker-mutator/core": "^8.7.1"
+    "@stryker-mutator/core": "^9.6.1"
   },
   "engines": {
     "node": ">=20"
