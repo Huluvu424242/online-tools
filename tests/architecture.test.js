@@ -1,11 +1,18 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const {execFileSync} = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
 const repositoryRoot = path.resolve(__dirname, "..");
+const productionSourcesPath = path.join(repositoryRoot, "production-sources.json");
+const productionSources = JSON.parse(fs.readFileSync(productionSourcesPath, "utf8"));
+
+function normalizeRepositoryPath(relativePath) {
+    return relativePath.replaceAll("\\", "/");
+}
 
 function walk(directory) {
     return fs.readdirSync(directory, {withFileTypes: true}).flatMap((entry) => {
@@ -15,6 +22,18 @@ function walk(directory) {
         if (entry.isDirectory()) return walk(fullPath);
         return [fullPath];
     });
+}
+
+function expandProductionSources() {
+    return productionSources.productionSources.flatMap((entry) => {
+        const fullPath = path.join(repositoryRoot, entry);
+
+        if (entry.endsWith("/")) {
+            return walk(fullPath).map((file) => normalizeRepositoryPath(path.relative(repositoryRoot, file)));
+        }
+
+        return [normalizeRepositoryPath(entry)];
+    }).sort();
 }
 
 function localReferences(html) {
@@ -59,11 +78,33 @@ test("index.html lädt keine Scripts oder Stylesheets über ein CDN", () => {
     );
 });
 
-test("Browsercode referenziert weder node_modules noch Node-only APIs", () => {
-    const productionFiles = walk(repositoryRoot).filter((file) => {
-        const relative = path.relative(repositoryRoot, file).replaceAll("\\", "/");
-        return relative.endsWith(".js") && !relative.startsWith("tests/");
-    });
+test("die zentrale Produktionsquellen-Liste ist vollständig und eindeutig", () => {
+    assert.deepEqual(
+        [...productionSources.productionSources].sort(),
+        productionSources.productionSources,
+        "productionSources muss sortiert sein"
+    );
+    assert.deepEqual(new Set(productionSources.productionSources).size, productionSources.productionSources.length);
+
+    const expandedSources = expandProductionSources();
+    assert.ok(expandedSources.includes("index.html"));
+    assert.ok(expandedSources.includes("app.js"));
+    assert.ok(expandedSources.includes("tools/yaml-properties.js"));
+    assert.equal(expandedSources.some((file) => file.startsWith("tests/")), false);
+
+    for (const entry of productionSources.productionSources) {
+        assert.ok(fs.existsSync(path.join(repositoryRoot, entry)), `${entry} fehlt`);
+    }
+
+    for (const relativeFile of productionSources.javascriptWithBusinessLogic) {
+        assert.ok(expandedSources.includes(relativeFile), `${relativeFile} ist keine produktive Quelle`);
+    }
+});
+
+test("Browsercode aus der zentralen Produktionsquellen-Liste referenziert weder node_modules noch Node-only APIs", () => {
+    const productionFiles = expandProductionSources()
+        .filter((relative) => relative.endsWith(".js"))
+        .map((relative) => path.join(repositoryRoot, relative));
 
     const violations = [];
     const forbiddenPatterns = [
@@ -78,12 +119,28 @@ test("Browsercode referenziert weder node_modules noch Node-only APIs", () => {
         const source = fs.readFileSync(file, "utf8");
         for (const [pattern, label] of forbiddenPatterns) {
             if (pattern.test(source)) {
-                violations.push(`${path.relative(repositoryRoot, file)}: ${label}`);
+                violations.push(`${normalizeRepositoryPath(path.relative(repositoryRoot, file))}: ${label}`);
             }
         }
     }
 
     assert.deepEqual(violations, [], `Node-Abhängigkeiten im Browsercode:\n${violations.join("\n")}`);
+});
+
+
+test("Offline-ZIP-Liste enthält alle eingecheckten Repository-Dateien", () => {
+    const zipSource = fs.readFileSync(path.join(repositoryRoot, "tools", "zip.js"), "utf8");
+    const listMatch = zipSource.match(/const OFFLINE_PACKAGE_FILES = \[([\s\S]*?)\];/);
+    assert.ok(listMatch, "OFFLINE_PACKAGE_FILES fehlt");
+
+    const offlineFiles = [...listMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+    const trackedFiles = execFileSync("git", ["ls-files"], {cwd: repositoryRoot, encoding: "utf8"})
+        .trim()
+        .split("\n")
+        .filter(Boolean);
+
+    const expectedFiles = [...new Set([...trackedFiles, "production-sources.json"])].sort();
+    assert.deepEqual(offlineFiles, expectedFiles);
 });
 
 test("index.html enthält weiterhin die zentralen Tool-Navigationen", () => {
@@ -117,16 +174,7 @@ test("Stryker mutiert produktive Tool-Logik explizit und erzwingt QS-Schwellen",
     assert.ok(config.reporters.includes("html"));
     assert.ok(config.reporters.includes("json"));
 
-    const expectedMutations = [
-        "tools/base64.js",
-        "tools/cron-erklaerer.js",
-        "tools/regex-checker.js",
-        "tools/regex-compare.js",
-        "tools/rot13.js",
-        "tools/yaml-properties.js",
-        "tools/zip.js"
-    ];
-    assert.deepEqual(config.mutate, expectedMutations);
+    assert.deepEqual(config.mutate, productionSources.javascriptWithBusinessLogic);
 
     for (const relativeFile of config.mutate) {
         assert.ok(fs.existsSync(path.join(repositoryRoot, relativeFile)), `${relativeFile} fehlt`);
