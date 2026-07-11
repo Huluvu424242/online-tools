@@ -26,7 +26,7 @@
     "package.json",
     "production-sources.json",
     "scripts/update-offline-manifest.js",
-    "stryker.conf.cjs",
+    "stryker.config.mjs",
     "styles.css",
     "tests/README.md",
     "tests/fna/regex-layout.test.js",
