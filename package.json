@@ -7,7 +7,8 @@
     "test": "node tests/run-all.js",
     "test:fna": "node tests/run-fna.js",
     "test:nfa": "node tests/run-nfa.js",
-    "mutation": "stryker run"
+    "mutation": "stryker run",
+    "update:offline-manifest": "node scripts/update-offline-manifest.js"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^8.7.1"
