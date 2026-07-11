@@ -3,7 +3,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const {createHarness} = require("./helpers/yaml-properties-harness");
+const {createHarness} = require("../helpers/yaml-properties-harness");
 
 const {sandbox} = createHarness();
 

@@ -5,6 +5,8 @@
   "description": "Development and test tooling for the browser-native online-tools application.",
   "scripts": {
     "test": "node tests/run-all.js",
+    "test:fna": "node tests/run-fna.js",
+    "test:nfa": "node tests/run-nfa.js",
     "mutation": "stryker run"
   },
   "devDependencies": {
