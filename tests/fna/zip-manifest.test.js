@@ -22,6 +22,7 @@ function loadZipApi(fetchImplementation = async () => ({ok: true, json: async ()
         Uint32Array,
         document: {baseURI: "https://example.test/index.html"},
         fetch: fetchImplementation,
+        process,
         setAnnounce() {},
         window: {},
         $() { return null; }

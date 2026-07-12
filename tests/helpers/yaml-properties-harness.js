@@ -51,6 +51,7 @@ function createHarness(options = {}) {
         __stryker__: globalThis.__stryker__,
         document: {addEventListener() {}},
         console,
+        process,
         $: (selector) => elements[selector] || null,
         setAnnounce(message) {
             announcements.push(message);
