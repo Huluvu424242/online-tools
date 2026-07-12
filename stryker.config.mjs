@@ -4,13 +4,13 @@
 const config = {
     packageManager: "npm",
     mutate: [
-        "tools/base64.js",
-        "tools/cron-erklaerer.js",
-        "tools/regex-checker.js",
-        "tools/regex-compare.js",
-        "tools/rot13.js",
-        "tools/yaml-properties.js",
-        "tools/zip.js"
+        "src/base64.js",
+        "src/cron-erklaerer.js",
+        "src/regex-checker.js",
+        "src/regex-compare.js",
+        "src/rot13.js",
+        "src/yaml-properties.js",
+        "src/zip.js"
     ],
 
     testRunner: "command",

@@ -1,0 +1,20 @@
+{
+  "description": "Zentrale Liste der produktiven Quellen. Einträge mit abschließendem Slash bezeichnen Verzeichnisse, deren eingecheckte Dateien zur produktiven browser-nativen Anwendung gehören.",
+  "productionSources": [
+    "generated-config/offline-package-files.json",
+    "index.html",
+    "src/",
+    "src/assets/PoweredByKI.png",
+    "src/main.js",
+    "src/styles.css"
+  ],
+  "javascriptWithBusinessLogic": [
+    "src/base64.js",
+    "src/cron-erklaerer.js",
+    "src/regex-checker.js",
+    "src/regex-compare.js",
+    "src/rot13.js",
+    "src/yaml-properties.js",
+    "src/zip.js"
+  ]
+}
