@@ -175,6 +175,25 @@ test("Tests sind nach fachlichen und nicht-fachlichen Suites ohne zentrale Datei
 });
 
 
+test("Mutationstest-Runner wählt bei Stryker-In-Place-Mutationen fokussierte fachliche Tests", () => {
+    const runner = require(path.join(repositoryRoot, "tests", "run-fna-mutated.js"));
+
+    assert.equal(runner.normalizeGitPath("src\\base64.js"), "src/base64.js");
+    assert.deepEqual(runner.testsForMutatedFile("src/base64.js"), ["tests/fna/text-tools.test.js"]);
+    assert.deepEqual(runner.testsForMutantId("0", new Map([["0", "src/base64.js"]])), ["tests/fna/text-tools.test.js"]);
+    assert.deepEqual(runner.testsForMutantId("999", new Map([["0", "src/base64.js"]])), runner.allFnaTests());
+
+    assert.deepEqual(
+        runner.testsForMutatedFile("src/yaml-properties.js"),
+        [
+            "tests/fna/yaml-properties-conversion.test.js",
+            "tests/fna/yaml-properties-escaping.test.js",
+            "tests/fna/yaml-properties-ui.test.js",
+            "tests/fna/yaml-properties.test.js"
+        ]
+    );
+});
+
 test("package.json verwaltet ausschließlich Entwicklungs- und Testwerkzeuge", () => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "package.json"), "utf8"));
 
@@ -193,11 +212,11 @@ test("Stryker mutiert produktive Tool-Logik explizit und erzeugt architekturkonf
     const {default: config} = await import(pathToFileURL(configPath));
 
     assert.equal(config.testRunner, "command");
-    assert.equal(config.commandRunner.command, "node tests/run-fna.js");
+    assert.equal(config.commandRunner.command, "node tests/run-fna-mutated.js");
     assert.equal(config.coverageAnalysis, "off");
     assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 0});
     assert.equal(config.timeoutMS, 60_000);
-    assert.equal(config.concurrency, 1);
+    assert.equal(config.concurrency, 4);
     assert.equal(config.cleanTempDir, true);
     assert.equal(config.inPlace, true);
     assert.deepEqual(config.reporters, ["html", "json", "clear-text", "progress"]);

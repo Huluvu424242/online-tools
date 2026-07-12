@@ -15,7 +15,7 @@ const config = {
 
     testRunner: "command",
     commandRunner: {
-        command: "node tests/run-fna.js"
+        command: "node tests/run-fna-mutated.js"
     },
 
     reporters: [
@@ -47,7 +47,7 @@ const config = {
     },
 
     timeoutMS: 60_000,
-    concurrency: 1,
+    concurrency: 4,
     coverageAnalysis: "off",
     cleanTempDir: true,
     inPlace: true,
