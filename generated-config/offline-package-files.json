@@ -38,6 +38,7 @@
     "stryker.config.mjs",
     "tests/README.md",
     "tests/fna/regex-layout.test.js",
+    "tests/fna/text-tools.test.js",
     "tests/fna/yaml-properties-conversion.test.js",
     "tests/fna/yaml-properties-escaping.test.js",
     "tests/fna/yaml-properties-ui.test.js",
