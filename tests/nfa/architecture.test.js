@@ -163,7 +163,7 @@ test("Tests sind nach fachlichen und nicht-fachlichen Suites ohne zentrale Datei
 
     assert.deepEqual(topLevelTestFiles, []);
 
-    const {discoverTestFiles} = require(path.join(testsRoot, "run-suite.js"));
+    const {discoverTestFiles} = require(path.join(testsRoot, "helpers/run-suite.js"));
     const fnaFiles = discoverTestFiles(path.join(testsRoot, "fna"))
         .map((file) => normalizeRepositoryPath(path.relative(repositoryRoot, file)));
     const nfaFiles = discoverTestFiles(path.join(testsRoot, "nfa"))

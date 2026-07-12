@@ -1,5 +1,5 @@
 "use strict";
 
-const {runSuite} = require("./run-suite");
+const {runSuite} = require("./helpers/run-suite");
 
 process.exit(runSuite("fna"));

@@ -12,7 +12,7 @@ function discoverTestFiles(directory) {
 }
 
 function runSuite(suiteDirectoryName) {
-    const testsDirectory = __dirname;
+    const testsDirectory = path.join(__dirname, "..");
     const repositoryRoot = path.resolve(testsDirectory, "..");
     const suiteDirectory = path.join(testsDirectory, suiteDirectoryName);
     const testFiles = discoverTestFiles(suiteDirectory);
