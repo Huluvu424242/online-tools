@@ -102,6 +102,7 @@ test("ROT13 transformiert nur ASCII-Buchstaben und ist symmetrisch", () => {
     const api = sandbox.window.OnlineToolsRot13;
     assert.equal(api.encode("Hello, World! äöü 123"), "Uryyb, Jbeyq! äöü 123");
     assert.equal(api.decode("Uryyb, Jbeyq! äöü 123"), "Hello, World! äöü 123");
+    assert.equal(api.encode("Zz"), "Mm");
     assert.equal(api.decode(api.encode("AbcXyz-[]")), "AbcXyz-[]");
 });
 

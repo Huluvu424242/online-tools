@@ -27,7 +27,7 @@ function createElement(value = "") {
     };
 }
 
-function loadCron() {
+function loadCron(options = {}) {
     const elements = {
         "#cronExpr": createElement(),
         "#cronExplain": createElement(),
@@ -38,7 +38,13 @@ function loadCron() {
     };
     const announcements = [];
     global.window = {};
-    global.document = {addEventListener() {}};
+    const domListeners = [];
+    global.document = {
+        addEventListener(type, listener) {
+            domListeners.push({type, listener});
+            if (options.fireDomReady && type === "DOMContentLoaded") listener();
+        }
+    };
     global.$ = (selector) => elements[selector] || null;
     global.escapeHtml = (value) => String(value)
         .replaceAll("&", "&amp;")
@@ -48,7 +54,7 @@ function loadCron() {
         .replaceAll("'", "&#39;");
     global.setAnnounce = (message) => announcements.push(message);
     global.eval(fs.readFileSync("src/cron-erklaerer.js", "utf8") + "\n//# sourceURL=src/cron-erklaerer.js");
-    return {elements, announcements};
+    return {elements, announcements, domListeners};
 }
 
 function loadRegexChecker(options = {}) {
@@ -98,23 +104,28 @@ test("Cron-Erklärer beschreibt Felder, escaped HTML und behandelt Fehler", () =
     const {elements, announcements} = loadCron();
     global.initCron();
 
-    elements["#cronExpr"].value = "*/15 1-5 1,15 <mon> *";
+    elements["#cronExpr"].value = " \t*/15   1-5  1,15\t<mon>   *  ";
     elements["#cronExplain"].click();
     assert.match(elements["#cronResult"].innerHTML, /Minute: alle 15/);
     assert.match(elements["#cronResult"].innerHTML, /Stunde: Bereich 1-5/);
     assert.match(elements["#cronResult"].innerHTML, /Tag im Monat: Liste 1,15/);
     assert.match(elements["#cronResult"].innerHTML, /Monat: &lt;mon&gt;/);
+    assert.match(elements["#cronResult"].innerHTML, /Wochentag: jede\(r\/s\)/);
+    assert.doesNotMatch(elements["#cronResult"].innerHTML, /<\/li>Stryker was here!<li>/);
     assert.equal(elements["#cronStatus"].textContent, "Erklärt.");
+    assert.equal(elements["#cronStatus"].style.color, "var(--muted)");
     assert.deepEqual(announcements, ["Cron erklärt"]);
 
     elements["#cronExpr"].value = "* * *";
     elements["#cronExplain"].click();
     assert.equal(elements["#cronStatus"].textContent, "Erwartet 5 Felder: min hour dom mon dow");
     assert.equal(elements["#cronStatus"].style.color, "var(--danger)");
+    assert.equal(elements["#cronResult"].innerHTML, `<p class="muted">Ungültig.</p>`);
 
     elements["#cronExpr"].value = "   ";
     elements["#cronExplain"].click();
     assert.equal(elements["#cronStatus"].textContent, "Bitte Cron-Ausdruck eingeben.");
+    assert.equal(elements["#cronStatus"].style.color, "var(--danger)");
 });
 
 test("Cron-Erklärer lädt Beispiele und setzt den Ausgangszustand zurück", () => {
@@ -122,7 +133,14 @@ test("Cron-Erklärer lädt Beispiele und setzt den Ausgangszustand zurück", () 
     global.initCron();
     elements["#cronExamples"].click();
     assert.match(elements["#cronResult"].innerHTML, /Alle 5 Minuten/);
+    assert.match(elements["#cronResult"].innerHTML, /\*\/5 \* \* \* \*/);
     assert.match(elements["#cronResult"].innerHTML, /0 9 \* \* 1-5/);
+    assert.match(elements["#cronResult"].innerHTML, /Mo–Fr um 09:00/);
+    assert.match(elements["#cronResult"].innerHTML, /30 2 1 \* \*/);
+    assert.match(elements["#cronResult"].innerHTML, /Am 1\. jeden Monats um 02:30/);
+    assert.match(elements["#cronResult"].innerHTML, /0 0 \* \* 0/);
+    assert.match(elements["#cronResult"].innerHTML, /Sonntag 00:00/);
+    assert.doesNotMatch(elements["#cronResult"].innerHTML, /Stryker was here!/);
     assert.equal(elements["#cronStatus"].textContent, "Beispiele geladen.");
 
     elements["#cronExpr"].value = "0 0 * * *";
@@ -130,6 +148,25 @@ test("Cron-Erklärer lädt Beispiele und setzt den Ausgangszustand zurück", () 
     assert.equal(elements["#cronExpr"].value, "");
     assert.match(elements["#cronResult"].innerHTML, /Gib einen Ausdruck ein/);
     assert.equal(elements["#cronStatus"].textContent, "Geleert.");
+});
+
+test("Cron-Erklärer ist robust bei fehlenden UI-Elementen und initialisiert per DOMContentLoaded", () => {
+    const boot = loadCron({fireDomReady: true});
+    boot.elements["#cronExpr"].value = "* * * * *";
+    boot.elements["#cronExplain"].click();
+    assert.match(boot.elements["#cronResult"].innerHTML, /Minute: jede\(r\/s\)/);
+    assert.equal(boot.domListeners.map(({type}) => type).includes("DOMContentLoaded"), true);
+
+    const missingSelectors = ["#cronExpr", "#cronExplain", "#cronExamples", "#cronClear", "#cronResult", "#cronStatus"];
+    for (const selector of missingSelectors) {
+        const {elements} = loadCron();
+        const originalQuery = global.$;
+        global.$ = (candidate) => candidate === selector ? null : originalQuery(candidate);
+        assert.doesNotThrow(() => global.initCron(), selector);
+        if (selector !== "#cronExplain") {
+            assert.equal(elements["#cronExplain"].click(), undefined, selector);
+        }
+    }
 });
 
 test("Regex-Checker markiert Treffer sicher und bewertet lokale ReDoS-Heuristiken", async () => {
