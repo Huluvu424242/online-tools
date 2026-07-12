@@ -199,6 +199,7 @@ test("Stryker mutiert produktive Tool-Logik explizit und erzeugt architekturkonf
     assert.equal(config.timeoutMS, 60_000);
     assert.equal(config.concurrency, 1);
     assert.equal(config.cleanTempDir, true);
+    assert.equal(config.inPlace, true);
     assert.deepEqual(config.reporters, ["html", "json", "clear-text", "progress"]);
     assert.equal(config.htmlReporter.fileName, "reports/mutation/index.html");
     assert.equal(config.jsonReporter.fileName, "reports/mutation/mutation.json");

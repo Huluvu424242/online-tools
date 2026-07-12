@@ -48,6 +48,7 @@ function createHarness(options = {}) {
 
     const sandbox = {
         window: {},
+        __stryker__: globalThis.__stryker__,
         document: {addEventListener() {}},
         console,
         $: (selector) => elements[selector] || null,
