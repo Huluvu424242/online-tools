@@ -50,6 +50,7 @@ const config = {
     concurrency: 1,
     coverageAnalysis: "off",
     cleanTempDir: true,
+    inPlace: true,
     tempDirName: ".stryker-tmp"
 };
 

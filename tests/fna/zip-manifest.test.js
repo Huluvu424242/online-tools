@@ -11,6 +11,7 @@ const repositoryRoot = path.resolve(__dirname, "..", "..");
 function loadZipApi(fetchImplementation = async () => ({ok: true, json: async () => ({files: []})})) {
     const context = {
         Blob,
+        __stryker__: globalThis.__stryker__,
         DataView,
         Date,
         Error,
