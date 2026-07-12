@@ -41,6 +41,7 @@ const sandbox = {
     window: {},
     document: {addEventListener() {}},
     console,
+    process,
     $: (selector) => elements[selector] || null,
     setAnnounce() {},
     safeCopy: async () => {}
