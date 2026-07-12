@@ -59,7 +59,7 @@ StrykerJS ist als Entwicklungswerkzeug konfiguriert. Nach der Installation der D
 npm run mutation
 ```
 
-Die Konfiguration liegt in `stryker.conf.cjs`. Sie mutiert die produktiven Tool-Dateien unter `tools/`, nutzt gemäß Story die nicht-fachliche Suite `node tests/run-nfa.js` als Command-Runner und erzeugt Konsolen-, HTML- und JSON-Reports unter `reports/mutation/`. Temporäre Dateien und Reports sind über `.gitignore` ausgeschlossen und gehören nicht zur produktiven Offline-Anwendung.
+Die Konfiguration liegt in `stryker.conf.cjs`. Sie mutiert die produktiven Tool-Dateien unter `src/`, nutzt gemäß Story die nicht-fachliche Suite `node tests/run-nfa.js` als Command-Runner und erzeugt Konsolen-, HTML- und JSON-Reports unter `reports/mutation/`. Temporäre Dateien und Reports sind über `.gitignore` ausgeschlossen und gehören nicht zur produktiven Offline-Anwendung.
 
 ## Enthaltene Testgruppen
 

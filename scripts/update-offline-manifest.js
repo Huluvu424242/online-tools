@@ -6,7 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repositoryRoot = path.resolve(__dirname, "..");
-const manifestPath = path.join(repositoryRoot, "offline-package-files.json");
+const manifestPath = path.join(repositoryRoot, "generated-config/offline-package-files.json");
 const manifestRepositoryPath = "offline-package-files.json";
 
 function repositoryFiles() {

@@ -38,10 +38,10 @@ Die produktive Anwendung muss jederzeit direkt aus den im Repository enthaltenen
 
 ### Produktive Quellen
 
-* Die Datei `production-sources.json` ist die zentrale Definition dafür, welche Dateien und Verzeichnisse als produktive Quellen der browser-nativen Anwendung gelten.
+* Die Datei `generated-config/production-sources.json` ist die zentrale Definition dafür, welche Dateien und Verzeichnisse als produktive Quellen der browser-nativen Anwendung gelten.
 * Neue, verschobene oder entfernte produktive HTML-, CSS-, JavaScript- und Asset-Quellen müssen in dieser Datei nachgepflegt werden.
 * Architekturprüfungen, insbesondere Prüfungen auf Node.js-Abhängigkeiten im Browsercode, müssen diese zentrale Liste verwenden und dürfen nicht pauschal Test-, Konfigurations- oder Dokumentationsdateien als Produktivcode behandeln.
-* Die Offline-ZIP-Funktion bleibt davon unabhängig: Sie soll die eingecheckten, für das Repository relevanten Dateien ausliefern und nicht nur die produktiven Quellen aus `production-sources.json`.
+* Die Offline-ZIP-Funktion bleibt davon unabhängig: Sie soll die eingecheckten, für das Repository relevanten Dateien ausliefern und nicht nur die produktiven Quellen aus `generated-config/production-sources.json`.
 
 ### Zulässige Verwendung von Node.js
 

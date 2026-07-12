@@ -26,7 +26,7 @@ function loadZipApi(fetchImplementation = async () => ({ok: true, json: async ()
         $() { return null; }
     };
     vm.createContext(context);
-    vm.runInContext(fs.readFileSync(path.join(repositoryRoot, "tools", "zip.js"), "utf8"), context);
+    vm.runInContext(fs.readFileSync(path.join(repositoryRoot, "src", "zip.js"), "utf8"), context);
     return context.window.OnlineToolsZip;
 }
 
@@ -34,8 +34,8 @@ test("Offline-Manifest sortiert, dedupliziert und normalisiert Repository-Pfade"
     const api = loadZipApi();
 
     assert.deepEqual(
-        Array.from(api.parseOfflinePackageManifest({files: ["tools\\zip.js", "index.html", "index.html", "README.md"]})),
-        ["index.html", "README.md", "tools/zip.js"].sort()
+        Array.from(api.parseOfflinePackageManifest({files: ["src\\zip.js", "index.html", "index.html", "README.md"]})),
+        ["index.html", "README.md", "src/zip.js"].sort()
     );
 });
 
