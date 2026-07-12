@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: tests-${{ github.workflow }}-${{ github.ref }}
+  group: optionaltests-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
