@@ -2,6 +2,8 @@
   "description": "Automatisch aus git ls-files erzeugte Dateiliste für das Offline-ZIP. Nicht manuell pflegen.",
   "generatedFrom": "git ls-files",
   "files": [
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
     ".github/workflows/mutationtests.yml",
     ".github/workflows/tests.yml",
     ".gitignore",
