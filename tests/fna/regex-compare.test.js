@@ -154,3 +154,47 @@ test("Regex-Vergleich UI zeigt Syntaxfehler escaped an", () => {
     assert.match(elements.rcResult.innerHTML, /Nicht geschlossene Zeichenklasse/);
     assert.equal(elements.rcHint.textContent, "Prüfe die Syntax und die unterstützte Teilmenge.");
 });
+
+test("Regex-Vergleich escaped HTML und sichtbare Steuerzeichen kontextspezifisch", () => {
+    const {api} = loadRegexCompare();
+
+    assert.equal(api.escapeHtml(`<&>\"'`), "&lt;&amp;&gt;&quot;&#39;");
+    assert.equal(api.escapeVisible("\n\r\t\v\f" + String.fromCharCode(1) + String.fromCharCode(31) + String.fromCharCode(127) + "[]\\<&>\"'"), "\\n\\r\\t\\v\\f\\x01\\x1f\\x7f[]\\&lt;&amp;&gt;&quot;&#39;");
+});
+
+test("Regex-Vergleich UI beschreibt Steuerzeichen-Gegenbeispiele ohne HTML-Injektion", () => {
+    const {elements} = loadRegexCompare();
+
+    elements.rcPatternA.value = ".";
+    elements.rcPatternB.value = "[\n\r -~]";
+    elements.rcCompare.click();
+
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Regexe sind verschieden.");
+    assert.match(elements.rcResult.innerHTML, /<code>\\x00<\/code>/);
+    assert.match(elements.rcResult.innerHTML, /<strong>Länge:<\/strong> 1 Zeichen/);
+    assert.match(elements.rcResult.innerHTML, /Regex A akzeptiert:<\/strong> Ja/);
+    assert.match(elements.rcResult.innerHTML, /Regex B akzeptiert:<\/strong> Nein/);
+    assert.match(elements.rcResult.innerHTML, /Zeichenanalyse:<\/strong><br>\s*\\x00 \(0x00\)/);
+
+    elements.rcPatternA.value = "<script>alert('x')</script>";
+    elements.rcPatternB.value = "<script>alert('x')</script>";
+    elements.rcCompare.click();
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Regexe sind äquivalent.");
+    assert.doesNotMatch(elements.rcResult.innerHTML, /<script>/i);
+    assert.match(elements.rcResult.innerHTML, /&lt;script&gt;alert\(&#39;x&#39;\)&lt;\/script&gt;/);
+});
+
+test("Regex-Vergleich UI reagiert auf Pattern-B-Enter und funktioniert ohne Statuswert", () => {
+    const {elements} = loadRegexCompare();
+
+    elements.rcPatternA.value = "a";
+    elements.rcPatternB.value = "b";
+    elements.rcPatternB.keydown("Escape");
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "");
+    elements.rcPatternB.keydown("Enter");
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Regexe sind verschieden.");
+
+    const withoutStatusValue = loadRegexCompare();
+    withoutStatusValue.elements.rcStatusBox.querySelector = () => null;
+    assert.doesNotThrow(() => withoutStatusValue.elements.rcCompare.click());
+});
