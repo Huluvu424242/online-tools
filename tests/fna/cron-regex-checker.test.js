@@ -179,12 +179,22 @@ test("Regex-Checker markiert Treffer sicher und bewertet lokale ReDoS-Heuristike
     assert.match(elements["#rxResult"].innerHTML, /<mark>&lt;a&gt;<\/mark> &amp; <mark>&lt;a&gt;<\/mark>/);
     assert.match(elements["#rxResult"].innerHTML, /Treffer: <strong>2<\/strong>/);
     assert.equal(elements["#rxStatus"].textContent, "OK. Flags: g · Treffer: 2");
+    assert.equal(elements["#rxStatus"].style.color, "var(--muted)");
     assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), false);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-neutral"), false);
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /lokale Basis-Heuristik/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /safety-safe/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /✔/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /unauffällig/);
 
     elements["#rxPattern"].value = "(a+)+$";
     await elements["#rxRun"].click();
     assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), false);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-neutral"), false);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /safety-warn/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /⚠/);
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
 });
 
@@ -193,12 +203,20 @@ test("Regex-Checker behandelt leere, ungültige und trefferlose Eingaben", async
     global.initRegex();
     await elements["#rxRun"].click();
     assert.equal(elements["#rxStatus"].textContent, "Bitte ein Pattern eingeben.");
+    assert.equal(elements["#rxStatus"].style.color, "var(--danger)");
     assert.equal(elements["#rxSafety"].classList.contains("flat-neutral"), true);
+    assert.match(elements["#rxResult"].innerHTML, /Noch nichts ausgeführt/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Noch nicht geprüft/);
 
     elements["#rxPattern"].value = "[";
     await elements["#rxRun"].click();
     assert.match(elements["#rxStatus"].textContent, /Regex Fehler:/);
+    assert.equal(elements["#rxStatus"].style.color, "var(--danger)");
     assert.match(elements["#rxResult"].innerHTML, /Regex konnte nicht kompiliert werden/);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-neutral"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /safety-neutral/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /•/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Sicherheitsprüfung/);
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /nicht geprüft/);
 
     elements["#rxPattern"].value = "z+";
@@ -221,7 +239,11 @@ test("Regex-Checker kopiert Matches global, handhabt leere Treffer und löscht",
     assert.equal(elements["#rxPattern"].value, "");
     assert.equal(elements["#rxText"].value, "");
     assert.equal(elements["#rxCheckRedos"].checked, false);
+    assert.match(elements["#rxResult"].innerHTML, /Noch nichts ausgeführt/);
+    assert.equal(elements["#rxStatus"].textContent, "Geleert.");
+    assert.equal(elements["#rxStatus"].style.color, "var(--muted)");
     assert.equal(elements["#rxSafety"].classList.contains("flat-neutral"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Noch nicht geprüft/);
 });
 
 
