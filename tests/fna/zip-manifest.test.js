@@ -156,11 +156,11 @@ test("Offline-ZIP enthält valide lokale Header, Zentralverzeichnis und Datei-In
     assert.deepEqual(parsed.centralEntries.map((entry) => entry.crc), parsed.entries.map((entry) => entry.crc));
 });
 
-test("Offline-ZIP schreibt DOS-Datum mit Untergrenze 1980", async () => {
+test("Offline-ZIP begrenzt lokale DOS-Zeitstempel auf das Jahr 1980", async () => {
     const RealDate = Date;
     class FixedDate extends RealDate {
         constructor(...args) {
-            super(...(args.length ? args : ["1979-01-02T03:04:05Z"]));
+            super(...(args.length ? args : [1979, 0, 2, 3, 4, 5]));
         }
     }
     const api = loadZipApi(undefined, FixedDate);
