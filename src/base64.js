@@ -20,15 +20,13 @@ function getTextCodec(algorithm) {
             name: "Base64",
             description: "Base64 wandelt UTF-8-Text in eine ASCII-Zeichenfolge um und kann diese wieder zurückdekodieren.",
             encode: utf8ToB64,
-            decode: b64ToUtf8,
-            decodeInput: (value) => value.trim()
+            decode: b64ToUtf8
         },
         rot13: {
             name: "ROT13",
             description: "ROT13 ist symmetrisch: Kodieren und Dekodieren liefern dieselbe Buchstabenrotation.",
             encode: (value) => window.OnlineToolsRot13.encode(value),
-            decode: (value) => window.OnlineToolsRot13.decode(value),
-            decodeInput: (value) => value
+            decode: (value) => window.OnlineToolsRot13.decode(value)
         }
     };
 
@@ -60,20 +58,16 @@ function initBase64() {
     encodeBtn.addEventListener("click", () => {
         const codec = selectedCodec();
 
-        try {
-            output.value = codec.encode(input.value);
-            setStatus(`${codec.name} kodiert.`);
-            setAnnounce(`${codec.name} kodiert`);
-        } catch (e) {
-            setStatus(`Fehler beim ${codec.name}-Kodieren.`, true);
-        }
+        output.value = codec.encode(input.value);
+        setStatus(`${codec.name} kodiert.`);
+        setAnnounce(`${codec.name} kodiert`);
     });
 
     decodeBtn.addEventListener("click", () => {
         const codec = selectedCodec();
 
         try {
-            output.value = codec.decode(codec.decodeInput(input.value));
+            output.value = codec.decode(input.value);
             setStatus(`${codec.name} dekodiert.`);
             setAnnounce(`${codec.name} dekodiert`);
         } catch (e) {

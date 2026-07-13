@@ -36,18 +36,19 @@ const elements = {
     "#ypOutputLabel": createElement()
 };
 
-const source = fs.readFileSync("tools/yaml-properties.js", "utf8");
+const source = fs.readFileSync("src/yaml-properties.js", "utf8");
 const sandbox = {
     window: {},
     document: {addEventListener() {}},
     console,
+    process,
     $: (selector) => elements[selector] || null,
     setAnnounce() {},
     safeCopy: async () => {}
 };
 
 vm.createContext(sandbox);
-vm.runInContext(source, sandbox, {filename: "tools/yaml-properties.js"});
+vm.runInContext(source, sandbox, {filename: "src/yaml-properties.js"});
 
 const exampleYaml = `spring:
   application:

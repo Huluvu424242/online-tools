@@ -43,13 +43,15 @@ function createHarness(options = {}) {
         "#ypOutputLabel": createElement()
     };
 
-    const sourcePath = path.join(repositoryRoot, "tools", "yaml-properties.js");
+    const sourcePath = path.join(repositoryRoot, "src", "yaml-properties.js");
     const source = fs.readFileSync(sourcePath, "utf8");
 
     const sandbox = {
         window: {},
+        __stryker__: globalThis.__stryker__,
         document: {addEventListener() {}},
         console,
+        process,
         $: (selector) => elements[selector] || null,
         setAnnounce(message) {
             announcements.push(message);
@@ -63,7 +65,7 @@ function createHarness(options = {}) {
     };
 
     vm.createContext(sandbox);
-    vm.runInContext(source, sandbox, {filename: "tools/yaml-properties.js"});
+    vm.runInContext(source, sandbox, {filename: "src/yaml-properties.js"});
 
     return {
         sandbox,

@@ -4,18 +4,18 @@
 const config = {
     packageManager: "npm",
     mutate: [
-        "tools/base64.js",
-        "tools/cron-erklaerer.js",
-        "tools/regex-checker.js",
-        "tools/regex-compare.js",
-        "tools/rot13.js",
-        "tools/yaml-properties.js",
-        "tools/zip.js"
+        "src/base64.js",
+        "src/cron-erklaerer.js",
+        "src/regex-checker.js",
+        "src/regex-compare.js",
+        "src/rot13.js",
+        "src/yaml-properties.js",
+        "src/zip.js"
     ],
 
     testRunner: "command",
     commandRunner: {
-        command: "node tests/run-fna.js"
+        command: "node tests/run-fna-mutated.js"
     },
 
     reporters: [
@@ -47,9 +47,10 @@ const config = {
     },
 
     timeoutMS: 60_000,
-    concurrency: 1,
+    concurrency: 4,
     coverageAnalysis: "off",
     cleanTempDir: true,
+    inPlace: true,
     tempDirName: ".stryker-tmp"
 };
 

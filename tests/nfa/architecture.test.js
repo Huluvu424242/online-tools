@@ -8,7 +8,7 @@ const {pathToFileURL} = require("node:url");
 const test = require("node:test");
 
 const repositoryRoot = path.resolve(__dirname, "..", "..");
-const productionSourcesPath = path.join(repositoryRoot, "production-sources.json");
+const productionSourcesPath = path.join(repositoryRoot, "generated-config/production-sources.json");
 const productionSources = JSON.parse(fs.readFileSync(productionSourcesPath, "utf8"));
 
 function normalizeRepositoryPath(relativePath) {
@@ -53,7 +53,7 @@ function localReferences(html) {
 
 test("index.html und der YAML/Properties-Konverter existieren", () => {
     assert.ok(fs.existsSync(path.join(repositoryRoot, "index.html")));
-    assert.ok(fs.existsSync(path.join(repositoryRoot, "tools", "yaml-properties.js")));
+    assert.ok(fs.existsSync(path.join(repositoryRoot, "src", "yaml-properties.js")));
 });
 
 test("alle lokalen Script- und Stylesheet-Referenzen aus index.html existieren", () => {
@@ -89,8 +89,8 @@ test("die zentrale Produktionsquellen-Liste ist vollständig und eindeutig", () 
 
     const expandedSources = expandProductionSources();
     assert.ok(expandedSources.includes("index.html"));
-    assert.ok(expandedSources.includes("app.js"));
-    assert.ok(expandedSources.includes("tools/yaml-properties.js"));
+    assert.ok(expandedSources.includes("src/main.js"));
+    assert.ok(expandedSources.includes("src/yaml-properties.js"));
     assert.equal(expandedSources.some((file) => file.startsWith("tests/")), false);
 
     for (const entry of productionSources.productionSources) {
@@ -130,7 +130,7 @@ test("Browsercode aus der zentralen Produktionsquellen-Liste referenziert weder 
 
 
 test("Offline-ZIP-Manifest wird automatisch aus den eingecheckten Repository-Dateien erzeugt", () => {
-    const manifestPath = path.join(repositoryRoot, "offline-package-files.json");
+    const manifestPath = path.join(repositoryRoot, "generated-config/offline-package-files.json");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     const trackedFiles = execFileSync("git", ["ls-files"], {cwd: repositoryRoot, encoding: "utf8"})
         .trim()
@@ -141,7 +141,7 @@ test("Offline-ZIP-Manifest wird automatisch aus den eingecheckten Repository-Dat
     assert.equal(manifest.generatedFrom, "git ls-files");
     assert.deepEqual(manifest.files, expectedFiles);
 
-    const zipSource = fs.readFileSync(path.join(repositoryRoot, "tools", "zip.js"), "utf8");
+    const zipSource = fs.readFileSync(path.join(repositoryRoot, "src", "zip.js"), "utf8");
     assert.doesNotMatch(zipSource, /OFFLINE_PACKAGE_FILES\s*=\s*\[/);
     assert.match(zipSource, /OFFLINE_PACKAGE_MANIFEST\s*=\s*"offline-package-files\.json"/);
 });
@@ -163,7 +163,7 @@ test("Tests sind nach fachlichen und nicht-fachlichen Suites ohne zentrale Datei
 
     assert.deepEqual(topLevelTestFiles, []);
 
-    const {discoverTestFiles} = require(path.join(testsRoot, "run-suite.js"));
+    const {discoverTestFiles} = require(path.join(testsRoot, "helpers/run-suite.js"));
     const fnaFiles = discoverTestFiles(path.join(testsRoot, "fna"))
         .map((file) => normalizeRepositoryPath(path.relative(repositoryRoot, file)));
     const nfaFiles = discoverTestFiles(path.join(testsRoot, "nfa"))
@@ -175,6 +175,25 @@ test("Tests sind nach fachlichen und nicht-fachlichen Suites ohne zentrale Datei
 });
 
 
+test("Mutationstest-Runner wählt bei Stryker-In-Place-Mutationen fokussierte fachliche Tests", () => {
+    const runner = require(path.join(repositoryRoot, "tests", "run-fna-mutated.js"));
+
+    assert.equal(runner.normalizeGitPath("src\\base64.js"), "src/base64.js");
+    assert.deepEqual(runner.testsForMutatedFile("src/base64.js"), ["tests/fna/text-tools.test.js"]);
+    assert.deepEqual(runner.testsForMutantId("0", new Map([["0", "src/base64.js"]])), ["tests/fna/text-tools.test.js"]);
+    assert.deepEqual(runner.testsForMutantId("999", new Map([["0", "src/base64.js"]])), runner.allFnaTests());
+
+    assert.deepEqual(
+        runner.testsForMutatedFile("src/yaml-properties.js"),
+        [
+            "tests/fna/yaml-properties-conversion.test.js",
+            "tests/fna/yaml-properties-escaping.test.js",
+            "tests/fna/yaml-properties-ui.test.js",
+            "tests/fna/yaml-properties.test.js"
+        ]
+    );
+});
+
 test("package.json verwaltet ausschließlich Entwicklungs- und Testwerkzeuge", () => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "package.json"), "utf8"));
 
@@ -184,7 +203,7 @@ test("package.json verwaltet ausschließlich Entwicklungs- und Testwerkzeuge", (
     assert.equal(packageJson.scripts["test:fna"], "node tests/run-fna.js");
     assert.equal(packageJson.scripts["test:nfa"], "node tests/run-nfa.js");
     assert.equal(packageJson.scripts.mutation, "stryker run");
-    assert.equal(packageJson.scripts["update:offline-manifest"], "node scripts/update-offline-manifest.js");
+    assert.equal(packageJson.scripts["update:manifest"], "node scripts/update-offline-manifest.js");
     assert.ok(packageJson.devDependencies["@stryker-mutator/core"]);
 });
 
@@ -193,12 +212,13 @@ test("Stryker mutiert produktive Tool-Logik explizit und erzeugt architekturkonf
     const {default: config} = await import(pathToFileURL(configPath));
 
     assert.equal(config.testRunner, "command");
-    assert.equal(config.commandRunner.command, "node tests/run-fna.js");
+    assert.equal(config.commandRunner.command, "node tests/run-fna-mutated.js");
     assert.equal(config.coverageAnalysis, "off");
     assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 0});
     assert.equal(config.timeoutMS, 60_000);
-    assert.equal(config.concurrency, 1);
+    assert.equal(config.concurrency, 4);
     assert.equal(config.cleanTempDir, true);
+    assert.equal(config.inPlace, true);
     assert.deepEqual(config.reporters, ["html", "json", "clear-text", "progress"]);
     assert.equal(config.htmlReporter.fileName, "reports/mutation/index.html");
     assert.equal(config.jsonReporter.fileName, "reports/mutation/mutation.json");
