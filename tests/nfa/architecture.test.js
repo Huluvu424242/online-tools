@@ -214,7 +214,7 @@ test("Stryker mutiert produktive Tool-Logik explizit und erzeugt architekturkonf
     assert.equal(config.testRunner, "command");
     assert.equal(config.commandRunner.command, "node tests/run-fna-mutated.js");
     assert.equal(config.coverageAnalysis, "off");
-    assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 0});
+    assert.deepEqual(config.thresholds, {high: 90, low: 80, break: 70});
     assert.equal(config.timeoutMS, 60_000);
     assert.equal(config.concurrency, 4);
     assert.equal(config.cleanTempDir, true);

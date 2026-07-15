@@ -267,6 +267,10 @@ test("Regex-Checker initialisiert nur mit vollständiger UI und verhindert doppe
         assert.equal(elements["#rxStatus"].textContent, "", selector);
     }
 
+    const absent = loadRegexChecker();
+    absent.elements.root = null;
+    assert.doesNotThrow(() => global.initRegex());
+
     const {elements} = loadRegexChecker();
     global.initRegex();
     global.initRegex();
@@ -275,7 +279,60 @@ test("Regex-Checker initialisiert nur mit vollständiger UI und verhindert doppe
     await elements["#rxRun"].click();
     assert.equal(elements.root.dataset.initialized, "true");
     assert.equal(elements["#rxStatus"].textContent, "OK. Flags: (keine) · Treffer: 1");
+    assert.match(elements["#rxResult"].innerHTML, /<mark>a<\/mark> a/);
+    assert.doesNotMatch(elements["#rxResult"].innerHTML, /Stryker was here!/);
 });
+
+test("Regex-Checker initialisiert per DOMContentLoaded, nutzt alle Flags und behandelt fehlende Sicherheitsanzeige", async () => {
+    const elements = {
+        "#rxPattern": createElement(),
+        "#rxText": createElement(),
+        "#rxRun": createElement(),
+        "#rxClear": createElement(),
+        "#rxResult": createElement(),
+        "#rxStatus": createElement(),
+        "#rxCopyMatches": createElement(),
+        "#rxSafety": createElement(),
+        "#rxCheckRedos": createElement(),
+        "#rxFlagG": createElement(),
+        "#rxFlagI": createElement(),
+        "#rxFlagM": createElement(),
+        "#rxFlagS": createElement(),
+        "#rxFlagU": createElement(),
+        "#rxFlagY": createElement(),
+        root: createElement()
+    };
+    const domListeners = [];
+    global.window = {};
+    global.document = {
+        addEventListener(type, listener) {
+            domListeners.push(type);
+            if (type === "DOMContentLoaded") listener();
+        },
+        getElementById(id) { return id === "tool-regex" ? elements.root : null; }
+    };
+    global.$ = (selector, root) => {
+        if (root && selector === ".flat-value") return null;
+        return elements[selector] || null;
+    };
+    global.escapeHtml = (value) => String(value);
+    global.safeCopy = async () => {};
+    global.eval(fs.readFileSync("src/regex-checker.js", "utf8") + "\n//# sourceURL=src/regex-checker.js");
+
+    assert.deepEqual(domListeners, ["DOMContentLoaded"]);
+    assert.equal(elements.root.dataset.initialized, "true");
+
+    elements["#rxFlagG"].checked = true;
+    elements["#rxFlagS"].checked = true;
+    elements["#rxFlagY"].checked = true;
+    elements["#rxPattern"].value = ".";
+    elements["#rxText"].value = "a\nb";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxStatus"].textContent, "OK. Flags: gsy · Treffer: 3");
+    assert.equal(elements["#rxSafety"].textContent, "");
+});
+
 
 test("Regex-Checker berücksichtigt Flags und begrenzt nicht-globale Treffer", async () => {
     const {elements} = loadRegexChecker();
@@ -298,6 +355,8 @@ test("Regex-Checker berücksichtigt Flags und begrenzt nicht-globale Treffer", a
     elements["#rxText"].value = "a a";
     await elements["#rxRun"].click();
     assert.equal(elements["#rxStatus"].textContent, "OK. Flags: (keine) · Treffer: 1");
+    assert.match(elements["#rxResult"].innerHTML, /<mark>a<\/mark> a/);
+    assert.doesNotMatch(elements["#rxResult"].innerHTML, /Stryker was here!/);
 });
 
 test("Regex-Checker dokumentiert übersprungene und erweiterte ReDoS-Heuristiken", async () => {
@@ -346,11 +405,38 @@ test("Regex-Checker erkennt weitere Basis-Heuristiken und escaped Sicherheitsmel
 });
 
 
+test("Regex-Checker deckt Grenzfälle der lokalen ReDoS-Heuristiken ab", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "aaaaaaaaaaaaaaaa";
+
+    elements["#rxPattern"].value = "(a|aa+)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer, überlappende Alternativen in Wiederholung/);
+
+    elements["#rxPattern"].value = ".+ {2,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "(ab.*cd){2,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "(ab|cd)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /keine zusätzlichen Auffälligkeiten|übersprungen/);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen/);
+});
+
+
 test("Regex-Checker meldet Kopier- und Patternfehler", async () => {
     const empty = loadRegexChecker();
     global.initRegex();
     await empty.elements["#rxCopyMatches"].click();
     assert.equal(empty.elements["#rxStatus"].textContent, "Kein Pattern.");
+    assert.equal(empty.elements["#rxStatus"].style.color, "var(--danger)");
 
     const failing = loadRegexChecker({copyFails: true});
     global.initRegex();
