@@ -431,6 +431,54 @@ test("Regex-Checker deckt Grenzfälle der lokalen ReDoS-Heuristiken ab", async (
 });
 
 
+test("Regex-Checker behandelt fehlende optionale Flags und Nullbreiten-Treffer beim Hervorheben", async () => {
+    const {elements} = loadRegexChecker();
+    elements["#rxFlagY"] = null;
+    global.initRegex();
+
+    elements["#rxFlagG"].checked = true;
+    elements["#rxPattern"].value = "a*";
+    elements["#rxText"].value = "ba";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxStatus"].textContent, "OK. Flags: g · Treffer: 3");
+    assert.match(elements["#rxResult"].innerHTML, /Treffer: <strong>3<\/strong>/);
+    assert.match(elements["#rxResult"].innerHTML, /b<mark>a<\/mark>/);
+});
+
+test("Regex-Checker beschreibt kombinierte Sicherheitsfunde mit Namen, Reihenfolge und sicherem HTML", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxPattern"].value = "(a+|a.*)+";
+    elements["#rxText"].value = "aaaa";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), false);
+    assert.match(
+        elements["#rxSafety"].flatValue.innerHTML,
+        /lokale Basis-Heuristik:<\/span>\s*<span class="safety-message">potenziell gefährlich \(verschachtelte Quantifizierer, wiederholter Wildcard-Ausdruck\)/
+    );
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /Stryker was here!/);
+});
+
+test("Regex-Checker rendert sichere erweiterte Heuristik vollständig", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxPattern"].value = "^foo$";
+    elements["#rxText"].value = "foo";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /lokale Basis-Heuristik:<\/span>\s*<span class="safety-message">unauffällig/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /erweiterte lokale Heuristik:<\/span>\s*<span class="safety-message">keine zusätzlichen Auffälligkeiten/);
+});
+
+
 test("Regex-Checker meldet Kopier- und Patternfehler", async () => {
     const empty = loadRegexChecker();
     global.initRegex();
