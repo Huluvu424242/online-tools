@@ -575,3 +575,54 @@ test("Regex-Checker meldet Kopier- und Patternfehler", async () => {
     assert.equal(failing.elements["#rxStatus"].textContent, "Kopieren nicht möglich.");
     assert.equal(failing.elements["#rxStatus"].style.color, "var(--danger)");
 });
+
+test("Regex-Checker unterscheidet ReDoS-Sicherheitszustände und komplexe Extended-Heuristiken", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "abc123";
+
+    elements["#rxPattern"].value = "(a+)+(.*)+";
+    await elements["#rxRun"].click();
+    assert.match(
+        elements["#rxSafety"].flatValue.innerHTML,
+        /potenziell gefährlich \(verschachtelte Quantifizierer, wiederholter Wildcard-Ausdruck\)/
+    );
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifiziererwiederholter Wildcard-Ausdruck/);
+
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxPattern"].value = "(foo|bar)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert/);
+
+    elements["#rxPattern"].value = "(foo|bar)+.+[a-z]+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(
+        elements["#rxSafety"].flatValue.innerHTML,
+        /auffällig \(Alternation kombiniert mit weiteren Quantifizierern, benachbarte breite Zeichenklassen mit Wiederholung\)/
+    );
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert mit weiteren Quantifizierernbenachbarte/);
+
+    elements["#rxPattern"].value = "[abc]+[def]+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
+
+    elements["#rxPattern"].value = "[ab]+c+[de]+f+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /mehrere wiederholte Teilmuster/);
+});
+
+test("Regex-Checker setzt neutrale Ladeanzeige vor asynchroner Sicherheitsprüfung", () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxPattern"].value = "^safe$";
+    elements["#rxText"].value = "safe";
+    // Die Sicherheitsprüfung nutzt eine async-Funktion; der synchron sichtbare Zwischenzustand muss eindeutig sein.
+    const runPromise = elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-neutral"), true);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), false);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /lokale Basis-Heuristik/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Prüfung läuft …/);
+    return runPromise;
+});
