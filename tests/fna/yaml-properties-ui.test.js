@@ -129,3 +129,67 @@ test("wiederholte Konvertierung ist deterministisch", () => {
     elements["#ypConvert"].click();
     assert.equal(elements["#ypOutput"].value, first);
 });
+
+test("Initialisierung bricht ohne vollständige UI ohne Nebenwirkungen ab", () => {
+    const {elements, init} = createHarness();
+    delete elements["#ypExample"];
+
+    assert.doesNotThrow(() => init());
+    assert.equal(elements["#ypInputLabel"].textContent, "");
+});
+
+test("Properties-Modus setzt eigene Beschriftungen und Platzhalter", () => {
+    const {elements, init} = createHarness();
+    elements["#ypMode"].value = "propertiesToYaml";
+
+    init();
+
+    assert.equal(elements["#ypInputLabel"].textContent, "Eingabe (Properties)");
+    assert.equal(elements["#ypOutputLabel"].textContent, "Ausgabe (YAML)");
+    assert.match(elements["#ypInput"].placeholder, /server\.port=8080/);
+    assert.equal(elements["#ypOutput"].placeholder, "YAML-Ergebnis…");
+});
+
+test("Whitespace-Eingabe gilt beim Konvertieren und Tauschen als leer", () => {
+    const {elements, init, announcements} = createHarness();
+    init();
+
+    elements["#ypInput"].value = "  \n\t  ";
+    elements["#ypOutput"].value = "stale=value";
+    elements["#ypConvert"].click();
+
+    assert.equal(elements["#ypOutput"].value, "");
+    assert.equal(elements["#ypStatus"].textContent, "Eingabe ist leer.");
+    assert.equal(elements["#ypStatus"].style.color, "var(--muted)");
+    assert.ok(announcements.includes("YAML Properties Eingabe ist leer"));
+
+    elements["#ypSwap"].click();
+    assert.equal(elements["#ypInput"].value, "");
+    assert.equal(elements["#ypOutput"].value, "");
+    assert.equal(elements["#ypMode"].value, "propertiesToYaml");
+});
+
+test("Tauschen bevorzugt vorhandene Ausgabe vor erneuter Konvertierung", () => {
+    const {elements, init} = createHarness();
+    init();
+
+    elements["#ypInput"].value = "name: original";
+    elements["#ypOutput"].value = "name=edited";
+    elements["#ypSwap"].click();
+
+    assert.equal(elements["#ypInput"].value, "name=edited");
+    assert.equal(elements["#ypOutput"].value, "");
+    assert.equal(elements["#ypMode"].value, "propertiesToYaml");
+});
+
+test("Tauschfehler werden mit Fehlfarbe angezeigt", () => {
+    const {elements, init} = createHarness();
+    init();
+
+    elements["#ypInput"].value = "application:\n\tname: demo";
+    elements["#ypSwap"].click();
+
+    assert.match(elements["#ypStatus"].textContent, /Tabs in Einrückungen/);
+    assert.equal(elements["#ypStatus"].style.color, "var(--danger)");
+    assert.equal(elements["#ypMode"].value, "yamlToProperties");
+});
