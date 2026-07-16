@@ -57,6 +57,25 @@ function loadCron(options = {}) {
     return {elements, announcements, domListeners};
 }
 
+function createFlatValue(options = {}) {
+    if (!options.failSafetyWriteNumber) return {innerHTML: "", textContent: ""};
+
+    let writes = 0;
+    let innerHTML = "";
+    return {
+        textContent: "",
+        get innerHTML() { return innerHTML; },
+        set innerHTML(value) {
+            writes += 1;
+            if (writes === options.failSafetyWriteNumber) {
+                if (Object.hasOwn(options, "failSafetyWriteError")) throw options.failSafetyWriteError;
+                throw new Error(options.failSafetyWriteMessage || "Anzeige defekt");
+            }
+            innerHTML = value;
+        }
+    };
+}
+
 function loadRegexChecker(options = {}) {
     const elements = {
         "#rxPattern": createElement(),
@@ -82,6 +101,7 @@ function loadRegexChecker(options = {}) {
         getElementById(id) { return id === "tool-regex" ? elements.root : null; }
     };
     elements.root = createElement();
+    elements["#rxSafety"].flatValue = createFlatValue(options);
     global.$ = (selector, root) => {
         if (root && selector === ".flat-value") return root.querySelector(selector);
         return elements[selector] || null;
@@ -625,4 +645,40 @@ test("Regex-Checker setzt neutrale Ladeanzeige vor asynchroner Sicherheitsprüfu
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /lokale Basis-Heuristik/);
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /Prüfung läuft …/);
     return runPromise;
+});
+
+test("Regex-Checker meldet Fehler aus der asynchronen Sicherheitsanzeige als Warnung", async () => {
+    const {elements} = loadRegexChecker({
+        failSafetyWriteNumber: 2,
+        failSafetyWriteMessage: "Sicherheitsanzeige defekt"
+    });
+    global.initRegex();
+
+    elements["#rxPattern"].value = "^safe$";
+    elements["#rxText"].value = "safe";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), false);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-neutral"), false);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Sicherheitsprüfung/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Sicherheitsanzeige defekt/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /safety-warn/);
+});
+
+test("Regex-Checker fällt bei unbekanntem Sicherheitsfehler auf generische Warnmeldung zurück", async () => {
+    const {elements} = loadRegexChecker({
+        failSafetyWriteNumber: 2,
+        failSafetyWriteError: {}
+    });
+    global.initRegex();
+
+    elements["#rxPattern"].value = "^safe$";
+    elements["#rxText"].value = "safe";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Sicherheitsprüfung/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /fehlgeschlagen/);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /Stryker was here!/);
 });
