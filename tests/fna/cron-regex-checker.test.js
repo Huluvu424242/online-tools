@@ -682,3 +682,43 @@ test("Regex-Checker fällt bei unbekanntem Sicherheitsfehler auf generische Warn
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /fehlgeschlagen/);
     assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /Stryker was here!/);
 });
+
+test("Regex-Checker bewertet Mengenquantifizierer nur mit gültiger Untergrenze als ReDoS-Signal", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "aaaaaaaa";
+
+    elements["#rxPattern"].value = "(a+){,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
+
+    elements["#rxPattern"].value = "(a+){ 12 ,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
+
+    elements["#rxPattern"].value = "(a+){ a ,}";
+    await elements["#rxRun"].click();
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
+
+    elements["#rxPattern"].value = ".*{ ,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = ".*{ word ,}";
+    await elements["#rxRun"].click();
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+});
+
+test("Regex-Checker trennt wiederholte Gruppen exakt am Quantifizierer", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "foobar";
+
+    elements["#rxPattern"].value = "(foo|foobar) { 2 ,}bar";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+
+    elements["#rxPattern"].value = "x(foo|foobar)+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+});
