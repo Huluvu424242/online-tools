@@ -819,3 +819,46 @@ test("Regex-Checker prüft Mengenquantifizierer der erweiterten Heuristik mit Zi
     assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
     assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /mehrere wiederholte Teilmuster|benachbarte breite Zeichenklassen/);
 });
+
+test("Regex-Checker erkennt ReDoS-Heuristiken mit direkten Mengenquantifizierern und Klammergrenzen", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxText"].value = "foobar123";
+
+    elements["#rxPattern"].value = "(foo|foobar){,}z+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+
+    elements["#rxPattern"].value = "(foo|bar){,}z+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert mit weiteren Quantifizierern/);
+
+    elements["#rxPattern"].value = "[a-z]+\\d{0,}";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
+});
+
+test("Regex-Checker unterscheidet überlappende Alternativen nach Präfixrichtung und escaped Trennzeichen", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "foobar";
+
+    elements["#rxPattern"].value = "(foobar|foo)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+
+    elements["#rxPattern"].value = "(bar|foobar)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen/);
+
+    elements["#rxPattern"].value = "(foo\\|foo|foo\\|foobar)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+});
