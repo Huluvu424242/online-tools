@@ -778,3 +778,44 @@ test("Regex-Checker prüft zusätzliche ReDoS-Abstands- und Alternationsgrenzen"
     await elements["#rxRun"].click();
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
 });
+
+test("Regex-Checker behandelt escaped Alternationszeichen und leere Alternativen in Wiederholungen fachlich", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "foobar";
+
+    elements["#rxPattern"].value = "(foo\\|foobar)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen/);
+
+    elements["#rxPattern"].value = "(foo|)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen/);
+
+    elements["#rxPattern"].value = "(foo|foobar){1,}";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+});
+
+test("Regex-Checker prüft Mengenquantifizierer der erweiterten Heuristik mit Ziffern und Leerraum", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxText"].value = "abc123";
+
+    elements["#rxPattern"].value = "(foo|bar){ 12 ,}baz+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert mit weiteren Quantifizierern/);
+
+    elements["#rxPattern"].value = "[abc]+\\d+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
+
+    elements["#rxPattern"].value = "a{ word ,}b{ also ,}";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /mehrere wiederholte Teilmuster|benachbarte breite Zeichenklassen/);
+});
