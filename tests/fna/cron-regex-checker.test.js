@@ -22,8 +22,14 @@ function createElement(value = "") {
         },
         querySelector(selector) { return selector === ".flat-value" ? this.flatValue : null; },
         flatValue: {innerHTML: "", textContent: ""},
-        addEventListener(type, listener) { listeners.set(type, listener); },
-        click() { return listeners.get("click")?.(); }
+        addEventListener(type, listener) {
+            if (!listeners.has(type)) listeners.set(type, []);
+            listeners.get(type).push(listener);
+        },
+        click() {
+            const results = (listeners.get("click") || []).map((listener) => listener());
+            return results.find((result) => result && typeof result.then === "function") || results.at(-1);
+        }
     };
 }
 
@@ -721,4 +727,54 @@ test("Regex-Checker trennt wiederholte Gruppen exakt am Quantifizierer", async (
     elements["#rxPattern"].value = "x(foo|foobar)+";
     await elements["#rxRun"].click();
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+});
+
+
+test("Regex-Checker entfernt veraltete Sicherheitsklassen bei Statuswechseln", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+
+    elements["#rxPattern"].value = "(a+)+$";
+    elements["#rxText"].value = "aaaa";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+
+    elements["#rxPattern"].value = "^safe$";
+    elements["#rxText"].value = "safe";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), false);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-neutral"), false);
+});
+
+test("Regex-Checker verhindert doppelte Copy-Listener bei erneuter Initialisierung", async () => {
+    const {elements, copied} = loadRegexChecker();
+    global.initRegex();
+    global.initRegex();
+
+    elements["#rxPattern"].value = "a";
+    elements["#rxText"].value = "a a";
+    await elements["#rxCopyMatches"].click();
+
+    assert.deepEqual(copied, ["a\na"]);
+    assert.equal(elements["#rxStatus"].textContent, "Matches kopiert: 2");
+});
+
+test("Regex-Checker prüft zusätzliche ReDoS-Abstands- und Alternationsgrenzen", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxText"].value = "foobar123";
+
+    elements["#rxPattern"].value = "(foo|foobar)   { 10 ,}z+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+
+    elements["#rxPattern"].value = "(foo|bar)   +   z+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert mit weiteren Quantifizierern/);
+
+    elements["#rxPattern"].value = "[a-z]+   \\d+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
 });
