@@ -905,3 +905,23 @@ test("Regex-Checker klassifiziert zusätzliche Quantifizierer-Grenzfälle beobac
         assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /Stryker was here!/, patternText);
     }
 });
+
+test("Regex-Checker bewertet alternative ReDoS-Pfade und escaped Sicherheitsmeldungen", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+
+    elements["#rxPattern"].value = "(a|aa)+$";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen/);
+
+    elements["#rxPattern"].value = "(.*)+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "a*b+c{1,}d*";
+    elements["#rxCheckRedos"].checked = true;
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /mehrere wiederholte Teilmuster/);
+});

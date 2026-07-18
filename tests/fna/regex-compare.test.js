@@ -254,3 +254,14 @@ test("Regex-Vergleich UI reagiert auf Pattern-B-Enter und funktioniert ohne Stat
     withoutStatusValue.elements.rcStatusBox.querySelector = () => null;
     assert.doesNotThrow(() => withoutStatusValue.elements.rcCompare.click());
 });
+
+test("Regex-Parser prüft Randfälle bei Klassen, Quantoren und Alternativen fachlich", () => {
+    const {api} = loadRegexCompare();
+
+    assert.deepEqual(api.RegexCompare.compare("a??", "a?"), {equal: true});
+    assert.equal(api.serialize(api.parse("[-]")), "[-]");
+    assert.equal(api.serialize(api.parse("[a-]")), "[-a]");
+    assert.equal(api.serialize(api.parse("[\\-]")), "[-]");
+    assert.throws(() => api.parse("[a-\\d]"), /Bereiche mit/);
+    assert.throws(() => api.parse("["), /Nicht geschlossene Zeichenklasse/);
+});

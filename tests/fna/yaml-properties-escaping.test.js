@@ -121,3 +121,19 @@ test("Property-Schlüssel überstehen einen Roundtrip", () => {
 
     assert.equal(roundtrip, original);
 });
+
+test("YAML-Kommentare und Schlüsseltrennung beachten Quotes, Escapes und Unicode", () => {
+    const yaml = [
+        "quoted: \"Wert # kein Kommentar\" # Kommentar",
+        "'key:part': 'v: # bleibt'",
+        "emoji: '😀 # literal'",
+        "plain: value # entfernt"
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "quoted=Wert \\# kein Kommentar",
+        "key\\:part=v\\: \\# bleibt",
+        "emoji=😀 \\# literal",
+        "plain=value"
+    ].join("\n"));
+});
