@@ -67,7 +67,12 @@ function parseZipEntries(bytes) {
     return {entries, centralEntries, fileCount, centralFileCount, centralSize, centralOffset, recordedCentralOffset};
 }
 
-function loadZipApi(fetchImplementation = async () => ({ok: true, json: async () => ({files: []})}), DateImplementation = Date) {
+function loadZipApi(fetchImplementation = async () => ({ok: true, json: async () => ({files: []})}), DateImplementation = Date, domOptions = {}) {
+    const listeners = new Map();
+    const appendedLinks = [];
+    const announcements = [];
+    const button = Object.hasOwn(domOptions, "button") ? domOptions.button : {disabled: false, addEventListener(type, listener) { listeners.set(type, listener); }};
+    const status = Object.hasOwn(domOptions, "status") ? domOptions.status : {textContent: "", style: {}};
     const context = {
         Blob,
         __stryker__: globalThis.__stryker__,
@@ -79,16 +84,31 @@ function loadZipApi(fetchImplementation = async () => ({ok: true, json: async ()
         URL,
         Uint8Array,
         Uint32Array,
-        document: {baseURI: "https://example.test/index.html"},
+        document: {
+            baseURI: "https://example.test/index.html",
+            body: {appendChild(link) { appendedLinks.push(link); }},
+            createElement(tagName) {
+                return {
+                    tagName,
+                    href: "",
+                    download: "",
+                    clicked: false,
+                    click() { this.clicked = true; },
+                    remove() { this.removed = true; }
+                };
+            }
+        },
         fetch: fetchImplementation,
         process,
-        setAnnounce() {},
+        setAnnounce(message) { announcements.push(message); },
         window: {},
-        $() { return null; }
+        $: (selector) => selector === "#downloadOfflineZip" ? button : selector === "#offlineZipStatus" ? status : null
     };
     vm.createContext(context);
     vm.runInContext(fs.readFileSync(path.join(repositoryRoot, "src", "zip.js"), "utf8"), context);
-    return context.window.OnlineToolsZip;
+    const api = context.window.OnlineToolsZip;
+    api.__test = {listeners, appendedLinks, announcements, button, status, context};
+    return api;
 }
 
 test("Offline-Manifest sortiert, dedupliziert und normalisiert Repository-Pfade", () => {
@@ -170,4 +190,88 @@ test("Offline-ZIP begrenzt lokale DOS-Zeitstempel auf das Jahr 1980", async () =
     assert.equal(parsed.entries[0].name, "old.txt");
     assert.equal(view.getUint16(12, true), (0 << 9) | (1 << 5) | 2);
     assert.equal(view.getUint16(10, true), (3 << 11) | (4 << 5) | 2);
+});
+
+
+test("Offline-ZIP schreibt erwartete CRC32-Prüfsummen für bekannte Inhalte", async () => {
+    const api = loadZipApi();
+    const parsed = parseZipEntries(await readBlobBytes(api.createZip([
+        {path: "empty.txt", data: new Uint8Array()},
+        {path: "hello.txt", data: new TextEncoder().encode("123456789")}
+    ])));
+
+    assert.deepEqual(parsed.entries.map((entry) => entry.crc), [0x00000000, 0xcbf43926]);
+    assert.deepEqual(parsed.centralEntries.map((entry) => entry.crc), [0x00000000, 0xcbf43926]);
+});
+
+test("Offline-ZIP-UI lädt Manifest-Dateien, erzeugt Download-Link und räumt URL auf", async () => {
+    const requested = [];
+    const objectUrls = [];
+    const revoked = [];
+    const api = loadZipApi(async (url, options) => {
+        requested.push({url: String(url), options});
+        if (String(url).endsWith("offline-package-files.json")) {
+            return {ok: true, json: async () => ({files: ["b.txt", "a.txt"]})};
+        }
+        return {ok: true, arrayBuffer: async () => new TextEncoder().encode(String(url).endsWith("a.txt") ? "A" : "B").buffer};
+    });
+    api.__test.context.URL.createObjectURL = (blob) => {
+        objectUrls.push(blob);
+        return "blob:offline";
+    };
+    api.__test.context.URL.revokeObjectURL = (url) => revoked.push(url);
+
+    api.initOfflineZipDownload();
+    await api.__test.listeners.get("click")();
+
+    assert.equal(api.__test.button.disabled, false);
+    assert.equal(api.__test.status.textContent, "Offline-ZIP erstellt. Entpacken und index.html lokal öffnen.");
+    assert.equal(api.__test.status.style.color, "var(--muted)");
+    assert.deepEqual(api.__test.announcements, ["Offline-ZIP erstellt"]);
+    assert.equal(api.__test.appendedLinks.length, 1);
+    assert.equal(api.__test.appendedLinks[0].tagName, "a");
+    assert.equal(api.__test.appendedLinks[0].href, "blob:offline");
+    assert.equal(api.__test.appendedLinks[0].download, "online-tools-offline.zip");
+    assert.equal(api.__test.appendedLinks[0].clicked, true);
+    assert.equal(api.__test.appendedLinks[0].removed, true);
+    assert.deepEqual(revoked, ["blob:offline"]);
+    assert.equal(objectUrls[0].type, "application/zip");
+    assert.deepEqual(requested.map((entry) => entry.url), [
+        "https://example.test/offline-package-files.json",
+        "https://example.test/a.txt",
+        "https://example.test/b.txt"
+    ]);
+    assert.deepEqual(JSON.parse(JSON.stringify(requested.map((entry) => entry.options))), [
+        {cache: "no-store"},
+        {cache: "no-store"},
+        {cache: "no-store"}
+    ]);
+});
+
+test("Offline-ZIP-UI meldet Ladefehler und reaktiviert den Button", async () => {
+    const api = loadZipApi(async (url) => {
+        if (String(url).endsWith("offline-package-files.json")) {
+            return {ok: true, json: async () => ({files: ["missing.txt"]})};
+        }
+        return {ok: false, status: 500};
+    });
+
+    api.initOfflineZipDownload();
+    await api.__test.listeners.get("click")();
+
+    assert.equal(api.__test.button.disabled, false);
+    assert.equal(api.__test.status.textContent, "ZIP konnte nicht erstellt werden: missing.txt: HTTP 500");
+    assert.equal(api.__test.status.style.color, "var(--danger)");
+    assert.deepEqual(api.__test.announcements, ["Offline-ZIP konnte nicht erstellt werden"]);
+});
+
+test("Offline-ZIP-UI ignoriert unvollständige Oberflächen robust", () => {
+    const addEventCalls = [];
+    const button = {addEventListener(type) { addEventCalls.push(type); }};
+    loadZipApi(undefined, Date, {button, status: null}).initOfflineZipDownload();
+    assert.deepEqual(addEventCalls, []);
+
+    const status = {textContent: "", style: {}};
+    loadZipApi(undefined, Date, {button: null, status}).initOfflineZipDownload();
+    assert.deepEqual(addEventCalls, []);
 });
