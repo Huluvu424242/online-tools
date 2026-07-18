@@ -295,3 +295,33 @@ test("Regex-Parser akzeptiert Ein-Zeichen-Bereiche als gültige Zeichenklasse", 
     assert.equal(api.serialize(api.simplify(api.parse("[a-a]"))), "[a]");
     assert.deepEqual(api.RegexCompare.compare("[z-z]", "z"), {equal: true});
 });
+
+test("Regex-Vergleich prüft Alphabetgrenzen, leere Alternativen und Wort-Escape", () => {
+    const {api} = loadRegexCompare();
+
+    assert.deepEqual(api.RegexCompare.compare(".", "[\n\r -~]"), {
+        equal: false,
+        witness: "\u0000",
+        acceptsA: true,
+        acceptsB: false
+    });
+    assert.deepEqual(api.RegexCompare.compare("[\\r]", "."), {
+        equal: false,
+        witness: " ",
+        acceptsA: false,
+        acceptsB: true
+    });
+    assert.deepEqual(api.RegexCompare.compare("a|", "a"), {
+        equal: false,
+        witness: "",
+        acceptsA: true,
+        acceptsB: false
+    });
+    assert.deepEqual(api.RegexCompare.compare("\\w", "[A-Za-z0-9_]"), {equal: true});
+    assert.deepEqual(api.RegexCompare.compare("\\w", "[A-Za-z0-9]"), {
+        equal: false,
+        witness: "_",
+        acceptsA: true,
+        acceptsB: false
+    });
+});

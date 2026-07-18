@@ -189,3 +189,41 @@ test("YAML-Properties maskiert Werte mit tatsächlichen Steuerzeichen und Doppel
 
     assert.equal(sandbox.yamlToProperties(sandbox.propertiesToYaml(properties)), properties);
 });
+
+test("YAML-Properties trennt Kommentare und Schlüsselwerte an führenden und maskierten Quote-Grenzen", () => {
+    const yaml = [
+        "# kompletter Kommentar",
+        "escapedDouble: \"a\\\" # bleibt im Wert\" # echter Kommentar",
+        "escapedSingle: 'it''s # bleibt' # echter Kommentar",
+        " spacedKey :   spaced value   ",
+        "colonOnly:",
+        "quotedColon: \"http://example.test/a:b # kein Kommentar\" # Kommentar"
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "escapedDouble=a\" \\# bleibt im Wert",
+        "escapedSingle=it's \\# bleibt",
+        "spacedKey=spaced value",
+        "quotedColon=http\\://example.test/a\\:b \\# kein Kommentar"
+    ].join("\n"));
+});
+
+test("YAML-Properties behandelt Null-Literale, unvollständige Quotes und maskierte Escapes fachlich", () => {
+    const yaml = [
+        "upperNull: NULL",
+        "prefixNull: nullish",
+        "suffixNull: mynull",
+        "lonelyBackslash: \"abc\\\"",
+        "unclosedDouble: \"abc",
+        "unclosedSingle: 'abc"
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "upperNull=",
+        "prefixNull=nullish",
+        "suffixNull=mynull",
+        "lonelyBackslash=abc\\\\",
+        "unclosedDouble=\"abc",
+        "unclosedSingle='abc"
+    ].join("\n"));
+});

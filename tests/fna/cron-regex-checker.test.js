@@ -969,3 +969,43 @@ test("Regex-Checker Kopierfunktion erzwingt globale Suche und meldet Eingabefehl
     assert.deepEqual(copied, ["a\na"]);
     assert.equal(elements["#rxStatus"].textContent, "Matches kopiert: 2");
 });
+
+test("Regex-Checker wertet ReDoS-Heuristiken mit Escapes, Leerraum und Mengenquantoren aus", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxText"].value = "aaaaaaaa";
+
+    elements["#rxPattern"].value = "(a\\)+){2,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
+
+    elements["#rxPattern"].value = "(a.*b){ 2 ,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "(ab|cd){ 2 ,}b{ 2 ,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert mit weiteren Quantifizierern/);
+
+    elements["#rxPattern"].value = "[a-z]+\\d+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
+});
+
+test("Regex-Checker unterscheidet sichere Grenzfälle von breiten Wiederholungen", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+
+    elements["#rxPattern"].value = "abcd";
+    elements["#rxText"].value = "abcd";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /keine zusätzlichen Auffälligkeiten/);
+
+    elements["#rxPattern"].value = "a+b+c+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /mehrere wiederholte Teilmuster/);
+});
