@@ -247,3 +247,37 @@ test("YAML-Properties verarbeitet Kommentare, CR-Zeilenenden und Listencontainer
         "root.\\#quoted\\:key=\\ Wert \\# bleibt "
     ].join("\n"));
 });
+
+test("YAML-Properties respektiert Kommentar- und Quote-Grenzen an Zeilenanfang und in Schlüsseln", () => {
+    const yaml = [
+        "# kompletter Kommentar am Anfang",
+        "\"key # literal\": \"value: still scalar\" # Kommentar",
+        "' spaced key ': '  value  '",
+        "escapedColon: \"a\\\": b # bleibt im Wert\" # Kommentar",
+        "plain#key: value # Inline-Kommentar",
+        "needsTrim   :   trimmed   "
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "key\\ \\#\\ literal=value\\: still scalar",
+        "spaced\\ key=\\  value  ",
+        "escapedColon=a\"\\: b \\# bleibt im Wert",
+        "plain\\#key=value",
+        "needsTrim=trimmed"
+    ].join("\n"));
+});
+
+test("YAML-Properties trennt Separatoren nicht innerhalb quoted Keys mit Doppelpunkt und Leerzeichen", () => {
+    const yaml = [
+        "\"a: b\": double",
+        "'c: d': single",
+        "container:",
+        "  - \"list: key\": item"
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "a\\:\\ b=double",
+        "c\\:\\ d=single",
+        "container[0].list\\:\\ key=item"
+    ].join("\n"));
+});
