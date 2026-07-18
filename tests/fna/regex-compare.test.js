@@ -83,8 +83,16 @@ test("Regex-Parser verarbeitet Quantoren, Gruppen, Klassen und Escapes determini
     assert.equal(api.serialize(api.simplify(api.parse("[\\w]"))).includes("_"), true);
     assert.equal(api.serialize(api.simplify(api.parse("[\\s]"))).includes("\\t"), true);
     assert.equal(api.serialize(api.simplify(api.parse("\\."))), "[.]");
+    assert.equal(api.serialize(api.simplify(api.parse("a"))), "[a]");
+    assert.equal(api.nullable(api.parse("")), true);
+    assert.deepEqual(api.RegexCompare.compare("a|", "a"), {
+        equal: false,
+        witness: "",
+        acceptsA: true,
+        acceptsB: false
+    });
 
-    assert.throws(() => api.parse("("), /Erwartet '\)'/);
+    assert.throws(() => api.parse("("), /Erwartet '\)' an Position 1/);
     assert.throws(() => api.parse("[z-a]"), /Ungültiger Bereich z-a/);
     assert.throws(() => api.parse("[\\d-a]"), /Bereiche mit/);
     assert.throws(() => api.parse("[abc"), /Nicht geschlossene Zeichenklasse/);
@@ -106,6 +114,54 @@ test("Ableitungen und Vereinfachungen behalten die unterstützte Regex-Semantik"
     assert.throws(() => api.derive({t: "unknown"}, "a"), /Unbekannter Knoten unknown/);
     assert.throws(() => api.serialize({t: "unknown"}), /Unbekannter Knoten unknown/);
 });
+
+test("Regex-Vergleich liefert fachliche Gegenbeispiele für sichtbare und Steuerzeichen-Alphabete", () => {
+    const {api} = loadRegexCompare();
+
+    assert.deepEqual(api.RegexCompare.compare("a", "b"), {
+        equal: false,
+        witness: "a",
+        acceptsA: true,
+        acceptsB: false
+    });
+
+    assert.deepEqual(api.RegexCompare.compare("[\n]", "[\r]"), {
+        equal: false,
+        witness: "\n",
+        acceptsA: true,
+        acceptsB: false
+    });
+
+    assert.deepEqual(api.RegexCompare.compare(".", "[\u0000-\u007f]"), {
+        equal: false,
+        witness: "\n",
+        acceptsA: false,
+        acceptsB: true
+    });
+});
+
+test("Regex-Parser meldet unvollständige Klassen-Escapes und Bereichsenden deterministisch", () => {
+    const {api} = loadRegexCompare();
+
+    assert.throws(() => api.parse("[\\"), /Ungültiger Escape in Zeichenklasse/);
+    assert.throws(() => api.parse("[abc"), /Nicht geschlossene Zeichenklasse/);
+});
+
+test("Ableitungen klonen Plus-Quantoren unabhängig und vereinfachen leere Sequenzen und Sterne", () => {
+    const {api} = loadRegexCompare();
+
+    const plusAst = api.parse("[ab]+");
+    const firstAfterA = api.serialize(api.simplify(api.derive(plusAst, "a")));
+    const firstAfterB = api.serialize(api.simplify(api.derive(plusAst, "b")));
+
+    assert.equal(firstAfterA, "([ab])*");
+    assert.equal(firstAfterB, "([ab])*");
+    assert.equal(api.serialize(api.simplify({t: "seq", parts: [{t: "empty"}, api.parse("a")]})), "∅");
+    assert.equal(api.serialize(api.simplify({t: "seq", parts: []})), "ε");
+    assert.equal(api.serialize(api.simplify({t: "alt", parts: []})), "∅");
+    assert.equal(api.serialize(api.simplify({t: "star", expr: {t: "star", expr: api.parse("a")}})), "([a])*");
+});
+
 
 test("Regex-Vergleich UI escaped Eingaben und bedient Vergleich, Swap, Clear und Enter", () => {
     const {elements} = loadRegexCompare();
