@@ -890,3 +890,18 @@ test("Regex-Checker verwechselt Trennzeichen nicht mit ReDoS-Quantifizierer-Synt
     assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
     assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen/);
 });
+
+test("Regex-Checker klassifiziert zusätzliche Quantifizierer-Grenzfälle beobachtbar", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxText"].value = "aaaaab";
+
+    for (const patternText of ["(a*){ 2 ,}", ".+{ 1 ,}", "(.*){ 1 ,}"]) {
+        elements["#rxPattern"].value = patternText;
+        await elements["#rxRun"].click();
+        assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true, patternText);
+        assert.match(elements["#rxSafety"].flatValue.innerHTML, /safety-warn/, patternText);
+        assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /Stryker was here!/, patternText);
+    }
+});
