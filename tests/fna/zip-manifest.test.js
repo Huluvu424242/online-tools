@@ -402,3 +402,33 @@ test("Offline-Manifest lehnt verschleierte Traversal-Segmente nach Backslash-Nor
     assert.throws(() => api.parseOfflinePackageManifest({files: ["docs\\..\\secret"]}), /unsicheren Dateinamen/);
     assert.throws(() => api.parseOfflinePackageManifest({files: ["..\\secret"]}), /unsicheren Dateinamen/);
 });
+
+test("Offline-Manifest validiert Dateiliste und Fetch-JSON auch nach erfolgreichem HTTP-Status", async () => {
+    const api = loadZipApi(async () => ({ok: true, json: async () => ({files: "index.html"})}));
+
+    assert.throws(() => api.parseOfflinePackageManifest(null), /keine Dateiliste/);
+    assert.throws(() => api.parseOfflinePackageManifest({files: [".."]}), /unsicheren Dateinamen/);
+    await assert.rejects(api.loadOfflinePackageFiles(), /keine Dateiliste/);
+});
+
+test("Offline-ZIP kodiert spätere Zentralverzeichnis-Offsets und DOS-Zeitsekunden", async () => {
+    const RealDate = Date;
+    class FixedDate extends RealDate {
+        constructor(...args) {
+            super(...(args.length ? args : [2026, 6, 18, 23, 59, 59]));
+        }
+    }
+    const api = loadZipApi(undefined, FixedDate);
+    const files = [
+        {path: "one.txt", data: new TextEncoder().encode("one")},
+        {path: "two.txt", data: new TextEncoder().encode("two")},
+        {path: "nested/three.txt", data: new Uint8Array([3])}
+    ];
+    const bytes = await readBlobBytes(api.createZip(files));
+    const parsed = parseZipEntries(bytes);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    assert.deepEqual(parsed.centralEntries.map((entry) => entry.localHeaderOffset), [0, 30 + "one.txt".length + 3, 30 + "one.txt".length + 3 + 30 + "two.txt".length + 3]);
+    assert.deepEqual(parsed.centralEntries.map((entry) => entry.compressedSize), [3, 3, 1]);
+    assert.equal(view.getUint16(10, true), (23 << 11) | (59 << 5) | 29);
+});

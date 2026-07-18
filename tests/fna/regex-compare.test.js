@@ -265,3 +265,26 @@ test("Regex-Parser prüft Randfälle bei Klassen, Quantoren und Alternativen fac
     assert.throws(() => api.parse("[a-\\d]"), /Bereiche mit/);
     assert.throws(() => api.parse("["), /Nicht geschlossene Zeichenklasse/);
 });
+
+test("Regex-Vergleich deckt Escape- und Klassen-Randfälle fachlich ab", () => {
+    const {api} = loadRegexCompare();
+
+    assert.deepEqual(api.RegexCompare.compare("\\s", "[\\s]"), {equal: true});
+    assert.deepEqual(api.RegexCompare.compare("[0-9]", "\\d"), {equal: true});
+    assert.deepEqual(api.RegexCompare.compare("[\\]]", "\\]"), {equal: true});
+    assert.deepEqual(api.RegexCompare.compare("a*", "(a*)*"), {equal: true});
+    assert.throws(() => api.parse("[b-a]"), /Ungültiger Bereich b-a/);
+});
+
+test("Regex-Vergleich UI zeigt Leerstring-Gegenbeispiel und escaped Fehlermeldungen", () => {
+    const {elements} = loadRegexCompare();
+
+    elements.rcPatternA.value = "a*";
+    elements.rcPatternB.value = "a+";
+    elements.rcCompare.click();
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Regexe sind verschieden.");
+    assert.match(elements.rcResult.innerHTML, /ε \(Leerstring\)/);
+    assert.match(elements.rcResult.innerHTML, /<strong>Länge:<\/strong> 0 Zeichen/);
+    assert.match(elements.rcResult.innerHTML, /Regex A akzeptiert:<\/strong> Ja/);
+    assert.match(elements.rcResult.innerHTML, /Regex B akzeptiert:<\/strong> Nein/);
+});

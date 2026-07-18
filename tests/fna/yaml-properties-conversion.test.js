@@ -200,3 +200,37 @@ test("Properties-Unescaping behandelt Formfeed, unbekannte Escapes und Windows-Z
     assert.match(yaml, /^unknown: "keep\\\\xchar"$/m);
 });
 test.todo("leere YAML-Objekte und leere Arrays verlustfrei darstellen");
+
+test("YAML-Listen mit Objekten und quoted Keys bleiben fachlich erhalten", () => {
+    const yaml = String.raw`services:
+  - name: api
+    "port:number": 8080
+  - name: web
+    enabled: false`;
+
+    assert.equal(
+        sandbox.yamlToProperties(yaml),
+        [
+            "services[0].name=api",
+            "services[0].port\\:number=8080",
+            "services[1].name=web",
+            "services[1].enabled=false"
+        ].join("\n")
+    );
+});
+
+test("Properties verarbeitet Fortsetzungszeilen, Kommentarpräfixe und nichtnumerische Indexsegmente", () => {
+    const yaml = sandbox.propertiesToYaml([
+        "# ignored",
+        "! ignored too",
+        "continued=line\\",
+        "next",
+        "items[abc]=named",
+        "items[2]=third"
+    ].join("\n"));
+
+    assert.match(yaml, /^continued: linenext$/m);
+    assert.match(yaml, /^items:/m);
+    assert.match(yaml, /^  abc: named$/m);
+    assert.match(yaml, /^  - third$/m);
+});
