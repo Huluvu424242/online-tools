@@ -193,6 +193,27 @@ test("Offline-ZIP begrenzt lokale DOS-Zeitstempel auf das Jahr 1980", async () =
 });
 
 
+test("Offline-ZIP schreibt lokale Header-Felder little-endian ZIP-konform", async () => {
+    const api = loadZipApi();
+    const data = new TextEncoder().encode("123456789");
+    const bytes = await readBlobBytes(api.createZip([{path: "hello.txt", data}]));
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    assert.equal(view.getUint32(0, true), 0x04034b50);
+    assert.equal(view.getUint16(4, true), 20);
+    assert.notEqual(view.getUint16(4, false), 20);
+    assert.equal(view.getUint16(6, true), 0x0800);
+    assert.notEqual(view.getUint16(6, false), 0x0800);
+    assert.equal(view.getUint16(8, true), 0);
+    assert.notEqual(view.getUint16(10, true), view.getUint16(10, false));
+    assert.notEqual(view.getUint16(12, true), view.getUint16(12, false));
+    assert.equal(view.getUint32(14, true), 0xcbf43926);
+    assert.equal(view.getUint32(18, true), data.length);
+    assert.equal(view.getUint32(22, true), data.length);
+    assert.equal(view.getUint16(26, true), "hello.txt".length);
+    assert.equal(view.getUint16(28, true), 0);
+});
+
 test("Offline-ZIP schreibt erwartete CRC32-Prüfsummen für bekannte Inhalte", async () => {
     const api = loadZipApi();
     const parsed = parseZipEntries(await readBlobBytes(api.createZip([
@@ -206,7 +227,13 @@ test("Offline-ZIP schreibt erwartete CRC32-Prüfsummen für bekannte Inhalte", a
 
 
 test("Offline-ZIP schreibt Zentralverzeichnis-Felder little-endian ZIP-konform", async () => {
-    const api = loadZipApi();
+    const RealDate = Date;
+    class FixedDate extends RealDate {
+        constructor(...args) {
+            super(...(args.length ? args : [2025, 10, 23, 17, 18, 20]));
+        }
+    }
+    const api = loadZipApi(undefined, FixedDate);
     const data = new TextEncoder().encode("123456789");
     const bytes = await readBlobBytes(api.createZip([{path: "hello.txt", data}]));
     const parsed = parseZipEntries(bytes);
@@ -218,6 +245,8 @@ test("Offline-ZIP schreibt Zentralverzeichnis-Felder little-endian ZIP-konform",
     assert.equal(view.getUint16(centralOffset + 6, true), 20);
     assert.equal(view.getUint16(centralOffset + 8, true), 0x0800);
     assert.equal(view.getUint16(centralOffset + 10, true), 0);
+    assert.equal(view.getUint16(centralOffset + 12, true), (17 << 11) | (18 << 5) | 10);
+    assert.equal(view.getUint16(centralOffset + 14, true), ((2025 - 1980) << 9) | ((10 + 1) << 5) | 23);
     assert.notEqual(view.getUint16(centralOffset + 12, true), view.getUint16(centralOffset + 12, false));
     assert.notEqual(view.getUint16(centralOffset + 14, true), view.getUint16(centralOffset + 14, false));
     assert.equal(view.getUint32(centralOffset + 16, true), 0xcbf43926);
@@ -320,6 +349,19 @@ test("Offline-ZIP-UI meldet Ladefehler und reaktiviert den Button", async () => 
 
 test("Offline-ZIP-UI meldet unbekannte Fehler ohne message verständlich", async () => {
     const api = loadZipApi(async () => { throw {}; });
+
+    api.initOfflineZipDownload();
+    await api.__test.listeners.get("click")();
+
+    assert.equal(api.__test.button.disabled, false);
+    assert.equal(api.__test.status.textContent, "ZIP konnte nicht erstellt werden: unbekannter Fehler");
+    assert.equal(api.__test.status.style.color, "var(--danger)");
+    assert.deepEqual(api.__test.announcements, ["Offline-ZIP konnte nicht erstellt werden"]);
+});
+
+
+test("Offline-ZIP-UI meldet null-Fehler ohne message verständlich", async () => {
+    const api = loadZipApi(async () => { throw null; });
 
     api.initOfflineZipDownload();
     await api.__test.listeners.get("click")();

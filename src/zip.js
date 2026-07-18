@@ -38,10 +38,12 @@ async function loadOfflinePackageFiles() {
 let crcTable;
 
 function getCrcTable() {
+    // Stryker disable next-line ConditionalExpression: CRC table caching is a pure performance optimization; recomputing yields the same checksum values.
     if (crcTable) return crcTable;
 
     crcTable = new Uint32Array(256);
 
+    // Stryker disable next-line EqualityOperator: Filling index 256 creates an unused typed-array no-op; CRC32 only addresses byte indexes 0..255.
     for (let n = 0; n < 256; n++) {
         let c = n;
         for (let k = 0; k < 8; k++) {
@@ -102,6 +104,7 @@ function createZip(files) {
         localView.setUint32(0, 0x04034b50, true);
         localView.setUint16(4, 20, true);
         localView.setUint16(6, 0x0800, true);
+        // Stryker disable next-line BooleanLiteral: Zero-valued ZIP header fields have identical bytes in either endian mode.
         localView.setUint16(8, 0, true);
         localView.setUint16(10, time, true);
         localView.setUint16(12, day, true);
@@ -109,6 +112,7 @@ function createZip(files) {
         localView.setUint32(18, data.length, true);
         localView.setUint32(22, data.length, true);
         localView.setUint16(26, nameBytes.length, true);
+        // Stryker disable next-line BooleanLiteral: Zero-valued ZIP header fields have identical bytes in either endian mode.
         localView.setUint16(28, 0, true);
         localHeader.set(nameBytes, 30);
 
@@ -120,6 +124,7 @@ function createZip(files) {
         centralView.setUint16(4, 20, true);
         centralView.setUint16(6, 20, true);
         centralView.setUint16(8, 0x0800, true);
+        // Stryker disable next-line BooleanLiteral: Zero-valued ZIP header fields have identical bytes in either endian mode.
         centralView.setUint16(10, 0, true);
         centralView.setUint16(12, time, true);
         centralView.setUint16(14, day, true);
@@ -127,10 +132,15 @@ function createZip(files) {
         centralView.setUint32(20, data.length, true);
         centralView.setUint32(24, data.length, true);
         centralView.setUint16(28, nameBytes.length, true);
+        // Stryker disable next-line BooleanLiteral: Zero-valued ZIP header fields have identical bytes in either endian mode.
         centralView.setUint16(30, 0, true);
+        // Stryker disable next-line BooleanLiteral: Zero-valued ZIP header fields have identical bytes in either endian mode.
         centralView.setUint16(32, 0, true);
+        // Stryker disable next-line BooleanLiteral: Zero-valued ZIP header fields have identical bytes in either endian mode.
         centralView.setUint16(34, 0, true);
+        // Stryker disable next-line BooleanLiteral: Zero-valued ZIP header fields have identical bytes in either endian mode.
         centralView.setUint16(36, 0, true);
+        // Stryker disable next-line BooleanLiteral: Zero-valued ZIP header fields have identical bytes in either endian mode.
         centralView.setUint32(38, 0, true);
         centralView.setUint32(42, offset, true);
         centralHeader.set(nameBytes, 46);
