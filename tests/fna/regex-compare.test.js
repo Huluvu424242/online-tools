@@ -288,3 +288,10 @@ test("Regex-Vergleich UI zeigt Leerstring-Gegenbeispiel und escaped Fehlermeldun
     assert.match(elements.rcResult.innerHTML, /Regex A akzeptiert:<\/strong> Ja/);
     assert.match(elements.rcResult.innerHTML, /Regex B akzeptiert:<\/strong> Nein/);
 });
+
+test("Regex-Parser akzeptiert Ein-Zeichen-Bereiche als gültige Zeichenklasse", () => {
+    const {api} = loadRegexCompare();
+
+    assert.equal(api.serialize(api.simplify(api.parse("[a-a]"))), "[a]");
+    assert.deepEqual(api.RegexCompare.compare("[z-z]", "z"), {equal: true});
+});
