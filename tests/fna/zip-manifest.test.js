@@ -382,3 +382,23 @@ test("Offline-ZIP-UI ignoriert unvollständige Oberflächen robust", () => {
     loadZipApi(undefined, Date, {button: null, status}).initOfflineZipDownload();
     assert.deepEqual(addEventCalls, []);
 });
+
+test("Offline-ZIP unterstützt leere Archive und verankert Endverzeichnisfelder", async () => {
+    const api = loadZipApi();
+    const bytes = await readBlobBytes(api.createZip([]));
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    assert.equal(bytes.length, 22);
+    assert.equal(view.getUint32(0, true), 0x06054b50);
+    assert.equal(view.getUint16(8, true), 0);
+    assert.equal(view.getUint16(10, true), 0);
+    assert.equal(view.getUint32(12, true), 0);
+    assert.equal(view.getUint32(16, true), 0);
+});
+
+test("Offline-Manifest lehnt verschleierte Traversal-Segmente nach Backslash-Normalisierung ab", () => {
+    const api = loadZipApi();
+
+    assert.throws(() => api.parseOfflinePackageManifest({files: ["docs\\..\\secret"]}), /unsicheren Dateinamen/);
+    assert.throws(() => api.parseOfflinePackageManifest({files: ["..\\secret"]}), /unsicheren Dateinamen/);
+});
