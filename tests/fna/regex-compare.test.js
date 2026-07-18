@@ -387,3 +387,20 @@ test("Regex-Vergleich UI beschreibt mehrstellige und HTML-kritische Gegenbeispie
     assert.match(elements.rcResult.innerHTML, /<code>&lt;<\/code>/);
     assert.match(elements.rcResult.innerHTML, /&lt; \(0x3c\)/);
 });
+
+test("Regex-Ableitungen unterscheiden nullable Tail, verschachtelte Alternativen und Sequenzen beobachtbar", () => {
+    const {api} = loadRegexCompare();
+
+    assert.deepEqual(api.RegexCompare.compare("ab?", "a"), {
+        equal: false,
+        witness: "ab",
+        acceptsA: true,
+        acceptsB: false
+    });
+    assert.deepEqual(api.RegexCompare.compare("(a|b)|c", "a|(b|c)"), {equal: true});
+    assert.deepEqual(api.RegexCompare.compare("(ab)c", "a(bc)"), {equal: true});
+    assert.deepEqual(api.RegexCompare.compare("(a*)*", "a*"), {equal: true});
+    assert.equal(api.serialize(api.simplify({t: "star", expr: {t: "empty"}})), "ε");
+    assert.equal(api.serialize(api.simplify(api.derive(api.parse("a?b"), "b"))), "ε");
+    assert.equal(api.serialize(api.simplify({t: "alt", parts: [api.parse("c"), api.parse("a"), api.parse("b")]})), "([a]|[b]|[c])");
+});
