@@ -404,3 +404,13 @@ test("Regex-Ableitungen unterscheiden nullable Tail, verschachtelte Alternativen
     assert.equal(api.serialize(api.simplify(api.derive(api.parse("a?b"), "b"))), "ε");
     assert.equal(api.serialize(api.simplify({t: "alt", parts: [api.parse("c"), api.parse("a"), api.parse("b")]})), "([a]|[b]|[c])");
 });
+
+test("Regex-Vergleich unterscheidet Dot-CR-Grenze, leere Gruppen und unerwartete Klammern", () => {
+    const {api} = loadRegexCompare();
+
+    const dotCharacters = api.serialize(api.parse("."));
+    assert.match(dotCharacters, /\\x00/);
+    assert.doesNotMatch(dotCharacters, /\\r/);
+    assert.deepEqual(api.RegexCompare.compare("()", ""), {equal: true});
+    assert.throws(() => api.parse("a)"), /Unerwartetes Zeichen '\)' an Position 1/);
+});

@@ -1043,3 +1043,35 @@ test("Regex-Checker bewertet ReDoS-Mengenquantoren mit Leerraum und breiten Klas
         assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true, patternText);
     }
 });
+
+test("Regex-Checker prüft erweiterte Mengenquantifizierer mit Whitespace fachlich", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+
+    elements["#rxPattern"].value = "\\d+\\w+";
+    elements["#rxText"].value = "123abc";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
+
+    elements["#rxPattern"].value = "(ab|cd)+c+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert mit weiteren Quantifizierern/);
+});
+
+test("Regex-Checker behandelt sichere erweiterte Prüfung als sicheren Status", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxPattern"].value = "abc";
+    elements["#rxText"].value = "abc";
+
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /erweiterte lokale Heuristik/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /keine zusätzlichen Auffälligkeiten/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /safety-safe/);
+});
