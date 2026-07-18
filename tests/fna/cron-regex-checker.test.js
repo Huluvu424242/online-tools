@@ -925,3 +925,47 @@ test("Regex-Checker bewertet alternative ReDoS-Pfade und escaped Sicherheitsmeld
     assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /mehrere wiederholte Teilmuster/);
 });
+
+test("Regex-Checker bewertet zusätzliche Sicherheitsvarianten und escaped Befunde", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+
+    elements["#rxPattern"].value = "(a|aa)+";
+    elements["#rxText"].value = "aaaa";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen/);
+
+    elements["#rxPattern"].value = "(.*)+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxPattern"].value = "a+b*c+d*";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /mehrere wiederholte Teilmuster/);
+
+    elements["#rxPattern"].value = "[a-z]+\\d*";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen/);
+});
+
+test("Regex-Checker Kopierfunktion erzwingt globale Suche und meldet Eingabefehler", async () => {
+    const {elements, copied} = loadRegexChecker();
+    global.initRegex();
+
+    await elements["#rxCopyMatches"].click();
+    assert.equal(elements["#rxStatus"].textContent, "Kein Pattern.");
+    assert.equal(elements["#rxStatus"].style.color, "var(--danger)");
+
+    elements["#rxPattern"].value = "[";
+    await elements["#rxCopyMatches"].click();
+    assert.equal(elements["#rxStatus"].textContent, "Kopieren nicht möglich.");
+    assert.equal(elements["#rxStatus"].style.color, "var(--danger)");
+
+    elements["#rxPattern"].value = "a";
+    elements["#rxText"].value = "a a";
+    await elements["#rxCopyMatches"].click();
+    assert.deepEqual(copied, ["a\na"]);
+    assert.equal(elements["#rxStatus"].textContent, "Matches kopiert: 2");
+});
