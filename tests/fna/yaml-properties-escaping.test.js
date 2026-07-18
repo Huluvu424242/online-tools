@@ -227,3 +227,23 @@ test("YAML-Properties behandelt Null-Literale, unvollständige Quotes und maskie
         "unclosedSingle='abc"
     ].join("\n"));
 });
+
+test("YAML-Properties verarbeitet Kommentare, CR-Zeilenenden und Listencontainer an Parser-Grenzen", () => {
+    const yaml = [
+        "# voller Kommentar",
+        "---   ",
+        "root:",
+        "  list:",
+        "    - name: erstes",
+        "    -   zweites   ",
+        "  '#quoted:key' :   ' Wert # bleibt ' # entfernt",
+        "...   ",
+        ""
+    ].join("\r");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "root.list[0].name=erstes",
+        "root.list[1]=zweites",
+        "root.\\#quoted\\:key=\\ Wert \\# bleibt "
+    ].join("\n"));
+});

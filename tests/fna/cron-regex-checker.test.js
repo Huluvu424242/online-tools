@@ -1009,3 +1009,37 @@ test("Regex-Checker unterscheidet sichere Grenzfälle von breiten Wiederholungen
     assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
     assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /mehrere wiederholte Teilmuster/);
 });
+
+test("Regex-Checker bewertet ReDoS-Mengenquantoren mit Leerraum und breiten Klassen exakt", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxText"].value = "abc123";
+
+    const warnCases = [
+        ["(ab+c){ 12 ,}", /verschachtelte Quantifizierer/],
+        ["(a.*b){ 12 ,}", /wiederholter Wildcard-Ausdruck/],
+        ["(foo|foobar){ 12 ,}", /überlappende Alternativen/],
+        ["(foo|bar){ 12 ,}x{ 12 ,}", /Alternation kombiniert mit weiteren Quantifizierern/]
+    ];
+
+    for (const [patternText, expectedFinding] of warnCases) {
+        elements["#rxPattern"].value = patternText;
+        await elements["#rxRun"].click();
+        assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true, patternText);
+        assert.match(elements["#rxSafety"].flatValue.innerHTML, expectedFinding, patternText);
+    }
+
+    const safeCases = [
+        "(ab+c){ 12 }",
+        "(a.*b){ 12 }",
+        "(foo|foobar){ 12 }",
+        "(foo|bar){ 12 }x{ 12 }"
+    ];
+
+    for (const patternText of safeCases) {
+        elements["#rxPattern"].value = patternText;
+        await elements["#rxRun"].click();
+        assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true, patternText);
+    }
+});
