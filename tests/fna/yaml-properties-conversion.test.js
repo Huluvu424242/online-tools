@@ -234,3 +234,55 @@ test("Properties verarbeitet Fortsetzungszeilen, Kommentarpräfixe und nichtnume
     assert.match(yaml, /^  abc: named$/m);
     assert.match(yaml, /^  - third$/m);
 });
+
+
+test("Properties-Pfade unterscheiden Indexgrenzen und verschachtelte Arrays", () => {
+    const properties = [
+        "literal.dot=value",
+        "array[0]=zero",
+        "array[01]=leading-zero-index",
+        "array[-1]=negative-index",
+        "array[abc]=named-index",
+        "nested[0].child=value",
+        "nested[1].list[0]=entry"
+    ].join("\n");
+
+    assert.equal(sandbox.propertiesToYaml(properties), [
+        "literal:",
+        "  dot: value",
+        "array:",
+        "  -1: negative-index",
+        "  abc: named-index",
+        "  - zero",
+        "  - leading-zero-index",
+        "nested:",
+        "  -",
+        "    child: value",
+        "  -",
+        "    list:",
+        "      - entry"
+    ].join("\n"));
+});
+
+test("Properties-Parser ersetzt skalare Zwischenknoten durch passende Objekt- oder Listenstruktur", () => {
+    const objectYaml = sandbox.propertiesToYaml([
+        "service=scalar",
+        "service.name=api"
+    ].join("\n"));
+
+    assert.equal(objectYaml, "service:\n  name: api");
+
+    const listYaml = sandbox.propertiesToYaml([
+        "items=scalar",
+        "items[0]=first"
+    ].join("\n"));
+
+    assert.equal(listYaml, "items:\n  - first");
+});
+
+test("Properties-Parser behält unvollständige Indexsyntax als literalen Schlüsselteil", () => {
+    assert.equal(
+        sandbox.propertiesToYaml("items[broken=value"),
+        'items:\n  "[broken": value'
+    );
+});

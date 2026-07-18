@@ -28,7 +28,7 @@ function createElement(value = "") {
     };
 }
 
-function loadRegexCompare() {
+function loadRegexCompare(overrides = {}) {
     const elements = {
         rcPatternA: createElement(),
         rcPatternB: createElement(),
@@ -39,6 +39,10 @@ function loadRegexCompare() {
         rcHint: createElement(),
         rcStatusBox: createElement()
     };
+    for (const id of overrides.missingIds || []) {
+        delete elements[id];
+    }
+
     global.document = {
         getElementById: (id) => elements[id] || null,
         addEventListener(type, listener) {
@@ -324,4 +328,62 @@ test("Regex-Vergleich prüft Alphabetgrenzen, leere Alternativen und Wort-Escape
         acceptsA: true,
         acceptsB: false
     });
+});
+
+
+test("Regex-Vergleich UI validiert alle Pflicht-Elemente einzeln und setzt Statusklassen", () => {
+    const requiredIds = [
+        "rcPatternA",
+        "rcPatternB",
+        "rcCompare",
+        "rcSwap",
+        "rcClear",
+        "rcResult",
+        "rcHint",
+        "rcStatusBox"
+    ];
+
+    for (const missingId of requiredIds) {
+        assert.doesNotThrow(() => loadRegexCompare({missingIds: [missingId]}), missingId);
+    }
+
+    const {elements} = loadRegexCompare();
+    elements.rcStatusBox.classList.add("neutral", "muted", "error");
+    elements.rcPatternA.value = " a ";
+    elements.rcPatternB.value = "a";
+    elements.rcCompare.click();
+
+    assert.equal(elements.rcStatusBox.classList.contains("success"), true);
+    assert.equal(elements.rcStatusBox.classList.contains("error"), false);
+    assert.equal(elements.rcStatusBox.classList.contains("neutral"), false);
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Regexe sind äquivalent.");
+
+    elements.rcPatternA.value = "a";
+    elements.rcPatternB.value = " b ";
+    elements.rcCompare.click();
+    assert.equal(elements.rcStatusBox.classList.contains("error"), true);
+    assert.equal(elements.rcStatusBox.classList.contains("success"), false);
+    assert.match(elements.rcResult.innerHTML, /Regex B akzeptiert:<\/strong> Nein/);
+
+    elements.rcClear.click();
+    assert.equal(elements.rcStatusBox.classList.contains("neutral"), true);
+    assert.equal(elements.rcResult.innerHTML, '<p class="muted">Gib zwei Regexe ein und klicke „Vergleichen“.</p>');
+});
+
+test("Regex-Vergleich UI beschreibt mehrstellige und HTML-kritische Gegenbeispiele vollständig", () => {
+    const {elements} = loadRegexCompare();
+
+    elements.rcPatternA.value = "ab";
+    elements.rcPatternB.value = "a";
+    elements.rcCompare.click();
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Regexe sind verschieden.");
+    assert.match(elements.rcResult.innerHTML, /<code>a<\/code>/);
+    assert.match(elements.rcResult.innerHTML, /<strong>Länge:<\/strong> 1 Zeichen/);
+    assert.match(elements.rcResult.innerHTML, /a \(0x61\)/);
+
+    elements.rcPatternA.value = "<";
+    elements.rcPatternB.value = ">";
+    elements.rcCompare.click();
+    assert.match(elements.rcResult.innerHTML, /<code>&lt;<\/code>/);
+    assert.match(elements.rcResult.innerHTML, /&lt; \(0x3c\)/);
 });
