@@ -204,6 +204,34 @@ test("Offline-ZIP schreibt erwartete CRC32-Prüfsummen für bekannte Inhalte", a
     assert.deepEqual(parsed.centralEntries.map((entry) => entry.crc), [0x00000000, 0xcbf43926]);
 });
 
+
+test("Offline-ZIP schreibt Zentralverzeichnis-Felder little-endian ZIP-konform", async () => {
+    const api = loadZipApi();
+    const data = new TextEncoder().encode("123456789");
+    const bytes = await readBlobBytes(api.createZip([{path: "hello.txt", data}]));
+    const parsed = parseZipEntries(bytes);
+    const centralOffset = parsed.centralOffset;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    assert.equal(view.getUint32(centralOffset, true), 0x02014b50);
+    assert.equal(view.getUint16(centralOffset + 4, true), 20);
+    assert.equal(view.getUint16(centralOffset + 6, true), 20);
+    assert.equal(view.getUint16(centralOffset + 8, true), 0x0800);
+    assert.equal(view.getUint16(centralOffset + 10, true), 0);
+    assert.notEqual(view.getUint16(centralOffset + 12, true), view.getUint16(centralOffset + 12, false));
+    assert.notEqual(view.getUint16(centralOffset + 14, true), view.getUint16(centralOffset + 14, false));
+    assert.equal(view.getUint32(centralOffset + 16, true), 0xcbf43926);
+    assert.equal(view.getUint32(centralOffset + 20, true), data.length);
+    assert.equal(view.getUint32(centralOffset + 24, true), data.length);
+    assert.equal(view.getUint16(centralOffset + 28, true), "hello.txt".length);
+    assert.equal(view.getUint16(centralOffset + 30, true), 0);
+    assert.equal(view.getUint16(centralOffset + 32, true), 0);
+    assert.equal(view.getUint16(centralOffset + 34, true), 0);
+    assert.equal(view.getUint16(centralOffset + 36, true), 0);
+    assert.equal(view.getUint32(centralOffset + 38, true), 0);
+    assert.equal(view.getUint32(centralOffset + 42, true), 0);
+});
+
 test("Offline-ZIP-UI lädt Manifest-Dateien, erzeugt Download-Link und räumt URL auf", async () => {
     const requested = [];
     const objectUrls = [];
@@ -248,6 +276,30 @@ test("Offline-ZIP-UI lädt Manifest-Dateien, erzeugt Download-Link und räumt UR
     ]);
 });
 
+
+test("Offline-ZIP-UI zeigt während der asynchronen Erstellung einen gesperrten Ladezustand", async () => {
+    let resolveManifest;
+    const manifestStarted = new Promise((resolve) => { resolveManifest = resolve; });
+    const api = loadZipApi(async () => {
+        await manifestStarted;
+        return {ok: true, json: async () => ({files: []})};
+    });
+    api.__test.context.URL.createObjectURL = () => "blob:empty";
+    api.__test.context.URL.revokeObjectURL = () => {};
+
+    api.initOfflineZipDownload();
+    const clickPromise = api.__test.listeners.get("click")();
+
+    assert.equal(api.__test.button.disabled, true);
+    assert.equal(api.__test.status.textContent, "ZIP wird erstellt …");
+    assert.equal(api.__test.status.style.color, "var(--muted)");
+
+    resolveManifest();
+    await clickPromise;
+
+    assert.equal(api.__test.button.disabled, false);
+});
+
 test("Offline-ZIP-UI meldet Ladefehler und reaktiviert den Button", async () => {
     const api = loadZipApi(async (url) => {
         if (String(url).endsWith("offline-package-files.json")) {
@@ -261,6 +313,19 @@ test("Offline-ZIP-UI meldet Ladefehler und reaktiviert den Button", async () => 
 
     assert.equal(api.__test.button.disabled, false);
     assert.equal(api.__test.status.textContent, "ZIP konnte nicht erstellt werden: missing.txt: HTTP 500");
+    assert.equal(api.__test.status.style.color, "var(--danger)");
+    assert.deepEqual(api.__test.announcements, ["Offline-ZIP konnte nicht erstellt werden"]);
+});
+
+
+test("Offline-ZIP-UI meldet unbekannte Fehler ohne message verständlich", async () => {
+    const api = loadZipApi(async () => { throw {}; });
+
+    api.initOfflineZipDownload();
+    await api.__test.listeners.get("click")();
+
+    assert.equal(api.__test.button.disabled, false);
+    assert.equal(api.__test.status.textContent, "ZIP konnte nicht erstellt werden: unbekannter Fehler");
     assert.equal(api.__test.status.style.color, "var(--danger)");
     assert.deepEqual(api.__test.announcements, ["Offline-ZIP konnte nicht erstellt werden"]);
 });
