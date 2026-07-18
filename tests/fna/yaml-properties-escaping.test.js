@@ -137,3 +137,55 @@ test("YAML-Kommentare und Schlüsseltrennung beachten Quotes, Escapes und Unicod
         "plain=value"
     ].join("\n"));
 });
+
+test("YAML-Properties schützt Kommentar-, Quote-, Listen- und Zeilenwechsel-Grenzfälle", () => {
+    const yaml = [
+        "leadingHash: \"# bleibt Wert\" # Kommentar",
+        "singleQuote: 'It''s # literal' # Kommentar",
+        "plainHash: vorher # Kommentar",
+        "list:",
+        "  - name: erstes",
+        "  - label: zweites",
+        "  - 'dritter Wert'",
+        "multi:",
+        "  one: 1",
+        "  two: 2"
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "leadingHash=\\# bleibt Wert",
+        "singleQuote=It's \\# literal",
+        "plainHash=vorher",
+        "list[0].name=erstes",
+        "list[1].label=zweites",
+        "list[2]=dritter Wert",
+        "multi.one=1",
+        "multi.two=2"
+    ].join("\n"));
+});
+
+test("YAML-Properties maskiert Werte mit tatsächlichen Steuerzeichen und Doppelpunkten roundtrip-fähig", () => {
+    const yaml = [
+        "windows: \"C:\\\\temp\\\\file.txt\"",
+        "linefeed: \"eins\\nzwei\"",
+        "carriage: \"eins\\rzwei\"",
+        "tabbed: \"eins\\tzwei\"",
+        "colonBackslash: \"a:\\\\b\"",
+        "colonPlain: \"a:b\"",
+        "empty: null"
+    ].join("\n");
+
+    const properties = sandbox.yamlToProperties(yaml);
+
+    assert.equal(properties, [
+        "windows=C:\\\\temp\\\\file.txt",
+        "linefeed=eins\\nzwei",
+        "carriage=eins\\rzwei",
+        "tabbed=eins\\tzwei",
+        "colonBackslash=a:\\\\b",
+        "colonPlain=a\\:b",
+        "empty="
+    ].join("\n"));
+
+    assert.equal(sandbox.yamlToProperties(sandbox.propertiesToYaml(properties)), properties);
+});
