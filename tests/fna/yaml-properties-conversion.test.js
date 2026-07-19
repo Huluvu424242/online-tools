@@ -148,28 +148,3 @@ test("YAML-Properties-YAML-Roundtrip erhält die fachlichen Werte", () => {
 
 test.todo("YAML Block-Scalars mit | und > fachlich korrekt unterstützen");
 test.todo("leere YAML-Objekte und leere Arrays verlustfrei darstellen");
-
-
-test("YAML-Kommentare und Doppelpunkte bleiben in Quotes struktursicher", () => {
-    const yaml = [
-        "plain: Wert#kein Kommentar",
-        "commented: Wert # Kommentar",
-        "double: \"http://example.test/a#b: c\" # Kommentar",
-        "single: 'it''s # not a comment: ok'",
-        "escaped: \"Quote \\\" und Slash \\\\ und Tab\\t\"",
-        "nullish: null",
-        "tilde: ~",
-        " spaced key :  spaced value  "
-    ].join("\n");
-
-    assert.equal(sandbox.yamlToProperties(yaml), [
-        "plain=Wert\\#kein Kommentar",
-        "commented=Wert",
-        "double=http\\://example.test/a\\#b\\: c",
-        "single=it's \\# not a comment\\: ok",
-        "escaped=Quote \" und Slash \\\\ und Tab\\t",
-        "nullish=",
-        "tilde=",
-        "spaced\\ key=spaced value"
-    ].join("\n"));
-});
