@@ -430,6 +430,34 @@ test("Regex-Checker erkennt weitere Basis-Heuristiken und escaped Sicherheitsmel
     assert.equal(elements["#rxStatus"].style.color, "var(--danger)");
 });
 
+test("Regex-Checker differenziert ReDoS-Grenzfälle mit Quantorvarianten", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+
+    const cases = [
+        ["(a+){2,}", "verschachtelte Quantifizierer"],
+        [".* {2,}", "wiederholter Wildcard-Ausdruck"],
+        ["(a|ab){1,}", "überlappende Alternativen in Wiederholung"],
+        ["a+b+c+d+", "mehrere wiederholte Teilmuster"],
+        ["(a|b)+c{2,}", "Alternation kombiniert mit weiteren Quantifizierern"],
+        ["\\d+\\w{2,}", "benachbarte breite Zeichenklassen mit Wiederholung"]
+    ];
+
+    elements["#rxText"].value = "aaaa bbbb cccc 1234";
+    elements["#rxCheckRedos"].checked = true;
+
+    for (const [pattern, expected] of cases) {
+        elements["#rxPattern"].value = pattern;
+        await elements["#rxRun"].click();
+        assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true, pattern);
+        assert.match(elements["#rxSafety"].flatValue.innerHTML, new RegExp(expected), pattern);
+    }
+
+    elements["#rxPattern"].value = "(ab|cd)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /keine zusätzlichen Auffälligkeiten/);
+});
 
 test("Regex-Checker deckt Grenzfälle der lokalen ReDoS-Heuristiken ab", async () => {
     const {elements} = loadRegexChecker();

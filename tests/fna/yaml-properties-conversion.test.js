@@ -163,6 +163,30 @@ escapedQuote: "a \"# kein Kommentar\" b"`;
     );
 });
 
+test("YAML-Kommentare und Doppelpunkte bleiben in Quotes struktursicher", () => {
+    const yaml = [
+        "plain: Wert#kein Kommentar",
+        "commented: Wert # Kommentar",
+        "double: \"http://example.test/a#b: c\" # Kommentar",
+        "single: 'it''s # not a comment: ok'",
+        "escaped: \"Quote \\\" und Slash \\\\ und Tab\\t\"",
+        "nullish: null",
+        "tilde: ~",
+        " spaced key :  spaced value  "
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "plain=Wert\\#kein Kommentar",
+        "commented=Wert",
+        "double=http\\://example.test/a\\#b\\: c",
+        "single=it's \\# not a comment\\: ok",
+        "escaped=Quote \" und Slash \\\\ und Tab\\t",
+        "nullish=",
+        "tilde=",
+        "spaced\\ key=spaced value"
+    ].join("\n"));
+});
+
 test("YAML-Doppelpunkte trennen Schlüssel nur am Zeilenende oder vor Whitespace", () => {
     const yaml = String.raw`url: jdbc:postgresql://localhost:5432/demo
 mapping:
