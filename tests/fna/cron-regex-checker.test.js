@@ -1259,3 +1259,35 @@ test("Regex-Checker behandelt sichere erweiterte Prüfung als sicheren Status", 
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /keine zusätzlichen Auffälligkeiten/);
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /safety-safe/);
 });
+
+test("Regex-Checker beschreibt ReDoS-Heuristiken für escaped Pipes und Klammergruppen präzise", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxText"].value = "aaa";
+
+    const warnCases = [
+        ["(abc)+d+e+f+", /mehrere wiederholte Teilmuster/],
+        ["(abc){ 4 ,}d{ 2 ,}e{ 1 ,}f+", /mehrere wiederholte Teilmuster/]
+    ];
+
+    for (const [patternText, expectedFinding] of warnCases) {
+        elements["#rxPattern"].value = patternText;
+        await elements["#rxRun"].click();
+        assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true, patternText);
+        assert.match(elements["#rxSafety"].flatValue.innerHTML, expectedFinding, patternText);
+    }
+
+    const safeCases = [
+        "(a\\|aa)+",
+        "(a\\|b)+",
+        "(abc)+d+e+",
+        "(abc){ 4 }d{ 2 ,}e{ 1 ,}f+"
+    ];
+
+    for (const patternText of safeCases) {
+        elements["#rxPattern"].value = patternText;
+        await elements["#rxRun"].click();
+        assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true, patternText);
+    }
+});

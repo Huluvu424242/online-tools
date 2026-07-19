@@ -362,3 +362,39 @@ test("Properties-Parser behält unvollständige Indexsyntax als literalen Schlü
         'items:\n  "[broken": value'
     );
 });
+
+test("Properties-Pfade behandeln Nullindex, negative und dezimale Indexsegmente fachlich", () => {
+    const yaml = sandbox.propertiesToYaml([
+        "items[0]=first",
+        "items[-1]=negative",
+        "items[1.5]=decimal",
+        "items[2]=third"
+    ].join("\n"));
+
+    assert.match(yaml, /^items:$/m);
+    assert.match(yaml, /^  - first$/m);
+    assert.match(yaml, /^  - third$/m);
+    assert.match(yaml, /^  -1: negative$/m);
+    assert.match(yaml, /^  "1.5": decimal$/m);
+});
+
+test("Properties-Pfade bauen Arrays und Objekte anhand des jeweils nächsten Pfadsegments", () => {
+    const yaml = sandbox.propertiesToYaml([
+        "matrix[0][0]=a00",
+        "matrix[0][1]=a01",
+        "matrix[1].name=row-one",
+        "object.list[0]=entry",
+        "object.map.key=value"
+    ].join("\n"));
+
+    assert.match(yaml, /^matrix:$/m);
+    assert.match(yaml, /^  -$/m);
+    assert.match(yaml, /^    - a00$/m);
+    assert.match(yaml, /^    - a01$/m);
+    assert.match(yaml, /^    name: row-one$/m);
+    assert.match(yaml, /^object:$/m);
+    assert.match(yaml, /^  list:$/m);
+    assert.match(yaml, /^    - entry$/m);
+    assert.match(yaml, /^  map:$/m);
+    assert.match(yaml, /^    key: value$/m);
+});

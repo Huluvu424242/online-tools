@@ -484,3 +484,41 @@ test("Regex-Vergleich unterscheidet Dot-CR-Grenze, leere Gruppen und unerwartete
     assert.deepEqual(api.RegexCompare.compare("()", ""), {equal: true});
     assert.throws(() => api.parse("a)"), /Unerwartetes Zeichen '\)' an Position 1/);
 });
+
+test("Regex-Vergleich UI behandelt getrimmte Pflichtfelder und Statusdetails beobachtbar", () => {
+    const {elements} = loadRegexCompare();
+
+    elements.rcPatternA.value = " a ";
+    elements.rcPatternB.value = " a ";
+    elements.rcCompare.click();
+    assert.equal(elements.rcStatusBox.classList.contains("success"), true);
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Regexe sind äquivalent.");
+    assert.match(elements.rcResult.innerHTML, /<strong>Regex A:<\/strong> <code>a<\/code>/);
+    assert.match(elements.rcResult.innerHTML, /<strong>Regex B:<\/strong> <code>a<\/code>/);
+    assert.equal(elements.rcHint.textContent, "Kein Gegenbeispiel gefunden.");
+
+    elements.rcPatternA.value = "a";
+    elements.rcPatternB.value = "   ";
+    elements.rcHint.textContent = "alter Hinweis";
+    elements.rcCompare.click();
+    assert.equal(elements.rcStatusBox.classList.contains("neutral"), true);
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Bitte zwei Regexe eingeben.");
+    assert.equal(elements.rcHint.textContent, "");
+    assert.match(elements.rcResult.innerHTML, /Beide Eingabefelder müssen ausgefüllt sein/);
+});
+
+test("Regex-Vergleich UI zeigt akzeptierende Seite und Zeichenanalyse vollständig", () => {
+    const {elements} = loadRegexCompare();
+
+    elements.rcPatternA.value = "ab";
+    elements.rcPatternB.value = "a";
+    elements.rcCompare.click();
+
+    assert.equal(elements.rcStatusBox.classList.contains("error"), true);
+    assert.equal(elements.rcStatusBox.statusValue.textContent, "Regexe sind verschieden.");
+    assert.match(elements.rcResult.innerHTML, /<code>a<\/code>/);
+    assert.match(elements.rcResult.innerHTML, /<strong>Länge:<\/strong> 1 Zeichen/);
+    assert.match(elements.rcResult.innerHTML, /Regex A akzeptiert:<\/strong> Nein/);
+    assert.match(elements.rcResult.innerHTML, /Regex B akzeptiert:<\/strong> Ja/);
+    assert.match(elements.rcResult.innerHTML, /a \(0x61\)/);
+});
