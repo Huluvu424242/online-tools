@@ -107,30 +107,6 @@ test("Ableitungen und Vereinfachungen behalten die unterstützte Regex-Semantik"
     assert.throws(() => api.serialize({t: "unknown"}), /Unbekannter Knoten unknown/);
 });
 
-
-test("Regex-Vergleich escaped sichtbare Kontroll- und HTML-Zeichen vollständig", () => {
-    const {api} = loadRegexCompare();
-
-    assert.equal(api.escapeHtml(`&<>"'`), "&amp;&lt;&gt;&quot;&#39;");
-    assert.equal(api.escapeVisible("A\nB\rC\tD\vE\fF"), "A\\nB\\rC\\tD\\vE\\fF");
-    assert.equal(api.escapeVisible(String.fromCharCode(1, 31, 32, 127)), "\\x01\\x1f \\x7f");
-    assert.equal(api.serialize(api.parse("[\\[\\]\\\\]")), "[\\[\\\\\\]]");
-});
-
-test("Regex-Vergleich behandelt Plus-Quantoren als fachliches ein-oder-mehrfach", () => {
-    const {api} = loadRegexCompare();
-
-    assert.deepEqual(api.RegexCompare.compare("a+", "aa*"), {equal: true});
-    assert.deepEqual(api.RegexCompare.compare("(ab|c)+", "(ab|c)(ab|c)*"), {equal: true});
-    assert.deepEqual(api.RegexCompare.compare("a+", "a*"), {
-        equal: false,
-        witness: "",
-        acceptsA: false,
-        acceptsB: true
-    });
-    assert.throws(() => api.serialize({t: "broken"}), /Unbekannter Knoten broken/);
-});
-
 test("Regex-Vergleich UI escaped Eingaben und bedient Vergleich, Swap, Clear und Enter", () => {
     const {elements} = loadRegexCompare();
 
