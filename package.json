@@ -13,6 +13,11 @@
   "devDependencies": {
     "@stryker-mutator/core": "^9.6.1"
   },
+  "overrides": {
+    "typed-rest-client": {
+      "qs": "6.15.3"
+    }
+  },
   "engines": {
     "node": ">=20"
   }
