@@ -43,7 +43,7 @@ const config = {
     thresholds: {
         high: 90,
         low: 80,
-        break: 0
+        break: 70
     },
 
     timeoutMS: 60_000,

@@ -104,6 +104,9 @@ test("ROT13 transformiert nur ASCII-Buchstaben und ist symmetrisch", () => {
     assert.equal(api.decode("Uryyb, Jbeyq! äöü 123"), "Hello, World! äöü 123");
     assert.equal(api.encode("Zz"), "Mm");
     assert.equal(api.decode(api.encode("AbcXyz-[]")), "AbcXyz-[]");
+    assert.equal(api.decode(""), "");
+    assert.equal(api.decode("123-_= äöü 😀"), "123-_= äöü 😀");
+    assert.equal(api.encode("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"), "NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm");
 });
 
 test("Texttool UI wechselt Algorithmus, tauscht, löscht und kopiert", async () => {
