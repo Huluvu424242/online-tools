@@ -615,6 +615,162 @@ test("Regex-Checker prüft erweiterte ReDoS-Kombinationen mit breiten Klassen", 
     assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
 });
 
+test("Regex-Checker deckt Grenzfälle der lokalen ReDoS-Heuristiken ab", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "aaaaaaaaaaaaaaaa";
+
+    elements["#rxPattern"].value = "(a|aa+)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer, überlappende Alternativen in Wiederholung/);
+
+    elements["#rxPattern"].value = ".+ {2,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "(ab.*cd){2,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "(ab|cd)+";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /keine zusätzlichen Auffälligkeiten|übersprungen/);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen/);
+});
+
+
+test("Regex-Checker behandelt fehlende optionale Flags und Nullbreiten-Treffer beim Hervorheben", async () => {
+    const {elements} = loadRegexChecker();
+    elements["#rxFlagY"] = null;
+    global.initRegex();
+
+    elements["#rxFlagG"].checked = true;
+    elements["#rxPattern"].value = "a*";
+    elements["#rxText"].value = "ba";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxStatus"].textContent, "OK. Flags: g · Treffer: 3");
+    assert.match(elements["#rxResult"].innerHTML, /Treffer: <strong>3<\/strong>/);
+    assert.match(elements["#rxResult"].innerHTML, /b<mark>a<\/mark>/);
+});
+
+test("Regex-Checker beschreibt kombinierte Sicherheitsfunde mit Namen, Reihenfolge und sicherem HTML", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxPattern"].value = "(a+|a.*)+";
+    elements["#rxText"].value = "aaaa";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxSafety"].classList.contains("flat-warn"), true);
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), false);
+    assert.match(
+        elements["#rxSafety"].flatValue.innerHTML,
+        /lokale Basis-Heuristik:<\/span>\s*<span class="safety-message">potenziell gefährlich \(verschachtelte Quantifizierer, wiederholter Wildcard-Ausdruck\)/
+    );
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /Stryker was here!/);
+});
+
+test("Regex-Checker rendert sichere erweiterte Heuristik vollständig", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxPattern"].value = "^foo$";
+    elements["#rxText"].value = "foo";
+    await elements["#rxRun"].click();
+
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /lokale Basis-Heuristik:<\/span>\s*<span class="safety-message">unauffällig/);
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /erweiterte lokale Heuristik:<\/span>\s*<span class="safety-message">keine zusätzlichen Auffälligkeiten/);
+});
+
+
+
+test("Regex-Checker unterscheidet kritische ReDoS-Grenzfälle mit Escape- und Mengenquantifizierern", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "aaaaaaaa";
+
+    elements["#rxPattern"].value = "(a+){ 2 ,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
+
+    elements["#rxPattern"].value = "(\\(+a+){2,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
+
+    elements["#rxPattern"].value = ".* +";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "(foo|foobar){ 1 ,}bar";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+
+    elements["#rxPattern"].value = "(foo|bar){1,}";
+    await elements["#rxRun"].click();
+    assert.equal(elements["#rxSafety"].classList.contains("flat-safe"), true);
+    assert.doesNotMatch(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen/);
+});
+
+test("Regex-Checker erkennt ReDoS-Varianten mit Abstand, Escape-Sequenzen und mehreren Alternativen", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxText"].value = "aaaaaaaa";
+
+    elements["#rxPattern"].value = "(a\\) +) +";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
+
+    elements["#rxPattern"].value = "(a+\\\\b){10,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /verschachtelte Quantifizierer/);
+
+    elements["#rxPattern"].value = ".+?suffix";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "(pre.*post)+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /wiederholter Wildcard-Ausdruck/);
+
+    elements["#rxPattern"].value = "(cat|catalog|dog)+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /überlappende Alternativen in Wiederholung/);
+
+});
+
+test("Regex-Checker prüft erweiterte ReDoS-Kombinationen mit breiten Klassen", async () => {
+    const {elements} = loadRegexChecker();
+    global.initRegex();
+    elements["#rxCheckRedos"].checked = true;
+    elements["#rxText"].value = "abc123";
+
+    elements["#rxPattern"].value = "(foo|bar){ 2 ,}baz+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert mit weiteren Quantifizierern/);
+
+    elements["#rxPattern"].value = "(foo|bar)+baz{3,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /Alternation kombiniert mit weiteren Quantifizierern/);
+
+    elements["#rxPattern"].value = "\\d+\\w+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
+
+    elements["#rxPattern"].value = ".+\\s+";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
+
+    elements["#rxPattern"].value = "[^>]+[a-z]{ 1 ,}";
+    await elements["#rxRun"].click();
+    assert.match(elements["#rxSafety"].flatValue.innerHTML, /benachbarte breite Zeichenklassen mit Wiederholung/);
+});
+
 test("Regex-Checker meldet Kopier- und Patternfehler", async () => {
     const empty = loadRegexChecker();
     global.initRegex();
