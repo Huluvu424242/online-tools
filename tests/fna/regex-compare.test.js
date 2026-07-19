@@ -119,6 +119,76 @@ test("Ableitungen und Vereinfachungen behalten die unterstützte Regex-Semantik"
     assert.throws(() => api.serialize({t: "unknown"}), /Unbekannter Knoten unknown/);
 });
 
+test("Regex-Vergleich escaped sichtbare Kontroll- und HTML-Zeichen vollständig", () => {
+    const {api} = loadRegexCompare();
+
+    assert.equal(api.escapeHtml(`&<>"'`), "&amp;&lt;&gt;&quot;&#39;");
+    assert.equal(api.escapeVisible("A\nB\rC\tD\vE\fF"), "A\\nB\\rC\\tD\\vE\\fF");
+    assert.equal(api.escapeVisible(String.fromCharCode(1, 31, 32, 127)), "\\x01\\x1f \\x7f");
+    assert.equal(api.serialize(api.parse("[\\[\\]\\\\]")), "[\\[\\\\\\]]");
+});
+
+test("Regex-Vergleich liefert fachliche Gegenbeispiele für sichtbare und Steuerzeichen-Alphabete", () => {
+    const {api} = loadRegexCompare();
+
+    assert.deepEqual(api.RegexCompare.compare("a", "b"), {
+        equal: false,
+        witness: "a",
+        acceptsA: true,
+        acceptsB: false
+    });
+
+    assert.deepEqual(api.RegexCompare.compare("[\n]", "[\r]"), {
+        equal: false,
+        witness: "\n",
+        acceptsA: true,
+        acceptsB: false
+    });
+
+    assert.deepEqual(api.RegexCompare.compare(".", "[\u0000-\u007f]"), {
+        equal: false,
+        witness: "\n",
+        acceptsA: false,
+        acceptsB: true
+    });
+});
+
+test("Regex-Parser meldet unvollständige Klassen-Escapes und Bereichsenden deterministisch", () => {
+    const {api} = loadRegexCompare();
+
+    assert.throws(() => api.parse("[\\"), /Ungültiger Escape in Zeichenklasse/);
+    assert.throws(() => api.parse("[abc"), /Nicht geschlossene Zeichenklasse/);
+});
+
+test("Ableitungen klonen Plus-Quantoren unabhängig und vereinfachen leere Sequenzen und Sterne", () => {
+    const {api} = loadRegexCompare();
+
+    const plusAst = api.parse("[ab]+");
+    const firstAfterA = api.serialize(api.simplify(api.derive(plusAst, "a")));
+    const firstAfterB = api.serialize(api.simplify(api.derive(plusAst, "b")));
+
+    assert.equal(firstAfterA, "([ab])*");
+    assert.equal(firstAfterB, "([ab])*");
+    assert.equal(api.serialize(api.simplify({t: "seq", parts: [{t: "empty"}, api.parse("a")]})), "∅");
+    assert.equal(api.serialize(api.simplify({t: "seq", parts: []})), "ε");
+    assert.equal(api.serialize(api.simplify({t: "alt", parts: []})), "∅");
+    assert.equal(api.serialize(api.simplify({t: "star", expr: {t: "star", expr: api.parse("a")}})), "([a])*");
+});
+
+test("Regex-Vergleich behandelt Plus-Quantoren als fachliches ein-oder-mehrfach", () => {
+    const {api} = loadRegexCompare();
+
+    assert.deepEqual(api.RegexCompare.compare("a+", "aa*"), {equal: true});
+    assert.deepEqual(api.RegexCompare.compare("(ab|c)+", "(ab|c)(ab|c)*"), {equal: true});
+    assert.deepEqual(api.RegexCompare.compare("a+", "a*"), {
+        equal: false,
+        witness: "",
+        acceptsA: false,
+        acceptsB: true
+    });
+    assert.throws(() => api.serialize({t: "broken"}), /Unbekannter Knoten broken/);
+});
+
 test("Regex-Vergleich liefert fachliche Gegenbeispiele für sichtbare und Steuerzeichen-Alphabete", () => {
     const {api} = loadRegexCompare();
 

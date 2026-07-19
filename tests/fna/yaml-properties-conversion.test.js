@@ -163,6 +163,82 @@ escapedQuote: "a \"# kein Kommentar\" b"`;
     );
 });
 
+test("YAML-Kommentare und Doppelpunkte bleiben in Quotes struktursicher", () => {
+    const yaml = [
+        "plain: Wert#kein Kommentar",
+        "commented: Wert # Kommentar",
+        "double: \"http://example.test/a#b: c\" # Kommentar",
+        "single: 'it''s # not a comment: ok'",
+        "escaped: \"Quote \\\" und Slash \\\\ und Tab\\t\"",
+        "nullish: null",
+        "tilde: ~",
+        " spaced key :  spaced value  "
+    ].join("\n");
+
+    assert.equal(sandbox.yamlToProperties(yaml), [
+        "plain=Wert\\#kein Kommentar",
+        "commented=Wert",
+        "double=http\\://example.test/a\\#b\\: c",
+        "single=it's \\# not a comment\\: ok",
+        "escaped=Quote \" und Slash \\\\ und Tab\\t",
+        "nullish=",
+        "tilde=",
+        "spaced\\ key=spaced value"
+    ].join("\n"));
+});
+
+test("YAML-Doppelpunkte trennen Schlüssel nur am Zeilenende oder vor Whitespace", () => {
+    const yaml = String.raw`url: jdbc:postgresql://localhost:5432/demo
+mapping:
+  "a:b": value
+  plain:with:colon: kept`;
+
+    assert.equal(
+        sandbox.yamlToProperties(yaml),
+        [
+            "url=jdbc\\:postgresql\\://localhost\\:5432/demo",
+            "mapping.a\\:b=value",
+            "mapping.plain\\:with\\:colon=kept"
+        ].join("\n")
+    );
+});
+
+test("Properties-Parser erkennt Whitespace-, Doppelpunkt- und Gleich-Separatoren mit optionalem Abstand", () => {
+    const yaml = sandbox.propertiesToYaml([
+        "spaceKey    spaced value",
+        "colonKey   : colon value",
+        "equalsKey  = equals value",
+        "tabKey\t:\ttab value"
+    ].join("\n"));
+
+    assert.match(yaml, /^spaceKey: "spaced value"$/m);
+    assert.match(yaml, /^colonKey: "colon value"$/m);
+    assert.match(yaml, /^equalsKey: "equals value"$/m);
+    assert.match(yaml, /^tabKey: "tab value"$/m);
+});
+
+test("Properties-Unescaping behandelt Formfeed, unbekannte Escapes und Windows-Zeilenenden", () => {
+    const yaml = sandbox.propertiesToYaml("form=before\\fafter\r\nunknown=keep\\xchar");
+
+    assert.match(yaml, /^form: "before\fafter"$/m);
+    assert.match(yaml, /^unknown: "keep\\\\xchar"$/m);
+});
+
+test("YAML-Kommentare starten nur außerhalb von Quotes und nach Whitespace", () => {
+    const yaml = String.raw`url: http://example.test/#anchor
+quoted: "Wert # bleibt"
+escapedQuote: "a \"# kein Kommentar\" b"`;
+
+    assert.equal(
+        sandbox.yamlToProperties(yaml),
+        [
+            "url=http\\://example.test/\\#anchor",
+            "quoted=Wert \\# bleibt",
+            "escapedQuote=a \"\\# kein Kommentar\" b"
+        ].join("\n")
+    );
+});
+
 test("YAML-Doppelpunkte trennen Schlüssel nur am Zeilenende oder vor Whitespace", () => {
     const yaml = String.raw`url: jdbc:postgresql://localhost:5432/demo
 mapping:
