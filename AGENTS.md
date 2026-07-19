@@ -306,6 +306,11 @@ Dabei gilt:
 * Incremental Mutation Testing darf zur Beschleunigung verwendet werden.
 * In regelmäßigen Abständen muss ein vollständiger, nicht nur inkrementeller Lauf erfolgen.
 
+Beispielstories für QS Verbesserung:
+* Story für die Initiale Erreichung von QS Zielen z.B. nach Refactorings: https://github.com/Huluvu424242/online-tools/issues/75
+* Story bei sich ändernden Zielvorgaben wenn einige Tests mit hoher QS immer wieder optimiert werden und andere noch auf einem sehr niedriegen QS Niveau liegen: https://github.com/Huluvu424242/online-tools/issues/103
+* Story bei langen Testdatei die partioniert werden sollten: https://github.com/Huluvu424242/online-tools/issues/109
+
 ### Reports
 
 Stryker soll mindestens folgende Reports erzeugen:
