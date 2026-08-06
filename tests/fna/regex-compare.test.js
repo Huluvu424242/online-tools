@@ -189,6 +189,54 @@ test("Regex-Vergleich behandelt Plus-Quantoren als fachliches ein-oder-mehrfach"
     assert.throws(() => api.serialize({t: "broken"}), /Unbekannter Knoten broken/);
 });
 
+test("Regex-Vergleich liefert fachliche Gegenbeispiele für sichtbare und Steuerzeichen-Alphabete", () => {
+    const {api} = loadRegexCompare();
+
+    assert.deepEqual(api.RegexCompare.compare("a", "b"), {
+        equal: false,
+        witness: "a",
+        acceptsA: true,
+        acceptsB: false
+    });
+
+    assert.deepEqual(api.RegexCompare.compare("[\n]", "[\r]"), {
+        equal: false,
+        witness: "\n",
+        acceptsA: true,
+        acceptsB: false
+    });
+
+    assert.deepEqual(api.RegexCompare.compare(".", "[\u0000-\u007f]"), {
+        equal: false,
+        witness: "\n",
+        acceptsA: false,
+        acceptsB: true
+    });
+});
+
+test("Regex-Parser meldet unvollständige Klassen-Escapes und Bereichsenden deterministisch", () => {
+    const {api} = loadRegexCompare();
+
+    assert.throws(() => api.parse("[\\"), /Ungültiger Escape in Zeichenklasse/);
+    assert.throws(() => api.parse("[abc"), /Nicht geschlossene Zeichenklasse/);
+});
+
+test("Ableitungen klonen Plus-Quantoren unabhängig und vereinfachen leere Sequenzen und Sterne", () => {
+    const {api} = loadRegexCompare();
+
+    const plusAst = api.parse("[ab]+");
+    const firstAfterA = api.serialize(api.simplify(api.derive(plusAst, "a")));
+    const firstAfterB = api.serialize(api.simplify(api.derive(plusAst, "b")));
+
+    assert.equal(firstAfterA, "([ab])*");
+    assert.equal(firstAfterB, "([ab])*");
+    assert.equal(api.serialize(api.simplify({t: "seq", parts: [{t: "empty"}, api.parse("a")]})), "∅");
+    assert.equal(api.serialize(api.simplify({t: "seq", parts: []})), "ε");
+    assert.equal(api.serialize(api.simplify({t: "alt", parts: []})), "∅");
+    assert.equal(api.serialize(api.simplify({t: "star", expr: {t: "star", expr: api.parse("a")}})), "([a])*");
+});
+
+
 test("Regex-Vergleich UI escaped Eingaben und bedient Vergleich, Swap, Clear und Enter", () => {
     const {elements} = loadRegexCompare();
 
