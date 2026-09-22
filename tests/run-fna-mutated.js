@@ -9,6 +9,7 @@ const repositoryRoot = path.resolve(__dirname, "..");
 
 const mutationTestMap = new Map([
     ["src/base64.js", ["tests/fna/text-tools.test.js"]],
+    ["src/calendar-week.js", ["tests/fna/calendar-week.test.js"]],
     ["src/rot13.js", ["tests/fna/text-tools.test.js"]],
     ["src/cron-erklaerer.js", ["tests/fna/cron-regex-checker.test.js"]],
     ["src/jwt.js", ["tests/fna/jwt.test.js"]],
