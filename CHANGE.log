@@ -14,6 +14,7 @@ The project currently has no tagged releases. Entries therefore follow the dates
 
 ### Changed
 
+- Replaced the permanent `develop` integration-branch model with protected `master` and `release/*` targets, backed by a versioned repository ruleset.
 - Modularized the binding AI-agent harness into a concise `AGENTS.md` entry point and topic-specific rules under `agent-rules/`, while preserving the browser-native architecture, offline, security, StrykerJS and converter requirements.
 
 ## 2026-07-11
