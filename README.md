@@ -21,11 +21,19 @@ Auf der Startseite gibt es den Button **Offline-ZIP herunterladen**. Damit wird 
 ## Enthaltene Tools
 
 - Cron Erklärer
+- Kalenderwochenanzeige für heute und frei wählbare Datumswerte nach ISO 8601
 - De-/Encoder für Base64 und ROT13
 - JWT Decoder & Manipulator für bidirektionale Bearbeitung von JOSE-Header und Claims
 - Konverter für YAML/Properties und Java-nahe Konfigurationen
 - Regex Checker mit lokaler ReDoS-Heuristik
 - Regex Vergleich für eine eingeschränkte reguläre Teilmenge
+
+## Kalenderwoche
+
+Das Kalenderwochen-Tool zeigt die aktuelle ISO-Kalenderwoche und berechnet die Kalenderwoche für ein frei
+gewähltes Datum. Die Berechnung folgt ISO 8601: Wochen beginnen montags; die erste Kalenderwoche eines
+ISO-Jahres ist die Woche mit dem ersten Donnerstag. Dadurch können Tage am Jahresanfang noch zum
+Kalenderwochenjahr des Vorjahres und Tage am Jahresende bereits zum Folgejahr gehören.
 
 ## JWT Decoder & Manipulator
 
