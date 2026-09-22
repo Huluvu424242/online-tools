@@ -30,17 +30,19 @@ Für neue oder geänderte GitHub Actions, CI/CD-Pipelines, Bots, Automationen, e
 
 ### Aktueller Workflow-Bestand und Freigaben
 
-Stand der Prüfung am 22. September 2026 auf dem Arbeitsstand von Story #141:
+Stand der Prüfung am 22. September 2026 nach Merge von Story #142 / PR #145:
 
-- `.github/workflows/kiagent-qstests.yml`, Workflow **Tests**, Git-Blob-SHA `79df5364382c851d38b9b672eba7b02820c4efa7`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und derzeit noch `develop` sowie `workflow_dispatch`.
-- `.github/workflows/kiagent-mutationtests.yml`, Workflow **Tests - Mutation**, Git-Blob-SHA `894e49b433b7b7b3032e30f38c5a22d4ef4ddc18`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und derzeit noch `develop` sowie `workflow_dispatch`.
+- `.github/workflows/kiagent-qstests.yml`, Workflow **Tests**, Git-Blob-SHA `afa6037bcc676acd1930d1fdc80b70522a2b9e7e`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und `release/**` sowie `workflow_dispatch`.
+- `.github/workflows/kiagent-mutationtests.yml`, Workflow **Tests - Mutation**, Git-Blob-SHA `c20a9d5f4fb63ad7c168946e1b80a1a57c23df57`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und `release/**` sowie `workflow_dispatch`.
+- Gegenüber den zuvor freigegebenen Versionen wurden ausschließlich die Branchfilter angepasst: `develop` wurde entfernt und `release/**` ergänzt. Berechtigungen, Secrets, Datenzugriffe, Runner, externe Actions, Jobs, Testbefehle und Artefaktkonfiguration blieben unverändert.
 
 ### Für KI-Agenten freigegebene Workflows
 
 Die beiden oben referenzierten `kiagent-*`-Workflows sind für die selbständige Verwendung durch KI-Agenten freigegeben, solange exakt die nachfolgend referenzierten Versionen und Sicherheitsmerkmale gelten:
 
-- **Tests:** `.github/workflows/kiagent-qstests.yml`, Git-Blob-SHA `79df5364382c851d38b9b672eba7b02820c4efa7`.
-- **Tests - Mutation:** `.github/workflows/kiagent-mutationtests.yml`, Git-Blob-SHA `894e49b433b7b7b3032e30f38c5a22d4ef4ddc18`.
+- **Tests:** `.github/workflows/kiagent-qstests.yml`, Git-Blob-SHA `afa6037bcc676acd1930d1fdc80b70522a2b9e7e`.
+- **Tests - Mutation:** `.github/workflows/kiagent-mutationtests.yml`, Git-Blob-SHA `c20a9d5f4fb63ad7c168946e1b80a1a57c23df57`.
+- Diese beiden nach Story #142 / PR #145 gemergten Versionen sind nach erneuter Sicherheitsprüfung ausdrücklich dauerhaft für die hier beschriebene selbständige Agentennutzung freigegeben.
 - Zulässige Verwendung umfasst die in diesen Versionen vorhandenen automatischen `push`- und `pull_request`-Trigger sowie `workflow_dispatch` und das erneute Ausführen eines zu derselben freigegebenen Version gehörenden Laufs.
 - Die Freigabe umfasst ausschließlich die in den referenzierten Versionen vorhandenen Berechtigungen, Inputs, Datenzugriffe, Artefakte, Runner und Zwecke. Eine Erweiterung wird nicht still mitfreigegeben.
 - Die Workflows dürfen Repository-Inhalte und regulär auflösbare Entwicklungsabhängigkeiten verarbeiten sowie die in ihnen definierten Testreports als Artefakte erzeugen. Zusätzliche Secrets oder schreibende Repositoryberechtigungen sind nicht freigegeben.
