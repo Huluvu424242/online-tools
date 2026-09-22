@@ -8,7 +8,7 @@
     <meta name="description" content="Statische Online-Tools für Entwickler: Base64, Regex, Cron, u.v.m."/>
 
     <link rel="stylesheet" href="src/styles.css"/>
-    <script defer src="src/cron-erklaerer.js"></script>
+    <script defer src="src/cron-erklaerer.js"></script>\n    <script defer src="src/calendar-week.js"></script>
     <script defer src="src/base64.js"></script>
     <script defer src="src/jwt.js"></script>
     <script defer src="src/rot13.js"></script>
@@ -90,6 +90,42 @@
                     <span class="btn-label">Offline-ZIP herunterladen</span>
                 </button>
                 <p class="hint" id="offlineZipStatus" role="status" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <!-- TOOL: Kalenderwoche -->
+        <section class="tool" id="tool-calendar-week" data-name="Kalenderwoche" data-nav="Kalenderwoche"
+                 data-tags="kalenderwoche kw iso woche datum date week">
+            <header class="tool-header">
+                <h1>Kalenderwoche</h1>
+                <p class="muted">ISO-Kalenderwoche für heute oder ein ausgewähltes Datum bestimmen.</p>
+            </header>
+
+            <div class="grid">
+                <div class="panel">
+                    <h2 class="panel-title">Aktuelle Kalenderwoche</h2>
+                    <p class="flat-result" aria-live="polite">
+                        <span class="flat-label">Heute:</span>
+                        <strong class="flat-value" id="calendarCurrentWeek">Wird ermittelt…</strong>
+                    </p>
+                    <p class="hint">Die Berechnung folgt ISO 8601: Die Woche beginnt montags und KW 1 enthält den ersten Donnerstag des Jahres.</p>
+                </div>
+
+                <div class="panel">
+                    <label for="calendarDate">Datum</label>
+                    <input id="calendarDate" type="date"/>
+
+                    <div class="row">
+                        <button class="btn primary" id="calendarCalculate" type="button">Kalenderwoche berechnen</button>
+                        <button class="btn" id="calendarToday" type="button">Heute</button>
+                    </div>
+
+                    <p class="flat-result" aria-live="polite">
+                        <span class="flat-label">Ergebnis:</span>
+                        <strong class="flat-value" id="calendarWeekResult">Noch kein Datum berechnet.</strong>
+                    </p>
+                    <p class="hint" id="calendarWeekStatus" role="status" aria-live="polite"></p>
+                </div>
             </div>
         </section>
 
