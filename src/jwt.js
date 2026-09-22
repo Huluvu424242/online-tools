@@ -119,17 +119,17 @@ function describeSignature(header, signature, signatureInvalidated = false) {
         };
     }
 
-    if (!algorithm) {
-        return {
-            kind: "warning",
-            text: "Im JOSE-Header fehlt alg. Eine Signatur kann nicht fachlich eingeordnet werden."
-        };
-    }
-
     if (signatureInvalidated && signature !== "") {
         return {
             kind: "warning",
             text: "Signatur durch Änderung ungültig geworden. Das alte Signatursegment wird nur zur Analyse mitgeführt; für ein gültig signiertes JWT ist eine Neusignierung erforderlich."
+        };
+    }
+
+    if (!algorithm) {
+        return {
+            kind: "warning",
+            text: "Im JOSE-Header fehlt alg. Eine Signatur kann nicht fachlich eingeordnet werden."
         };
     }
 
