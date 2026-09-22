@@ -88,6 +88,10 @@ test("eine vorhandene Signatur wird nach Inhaltsänderung als ungültig markiert
     const repeated = api.build(changed.headerJson, changed.payloadJson, changed);
     assert.equal(repeated.signatureInvalidated, true);
     assert.match(repeated.signatureStatus.text, /durch Änderung ungültig/);
+
+    const withoutAlg = api.build("{}", changed.payloadJson, original);
+    assert.equal(withoutAlg.signatureInvalidated, true);
+    assert.match(withoutAlg.signatureStatus.text, /durch Änderung ungültig/);
 });
 
 test("Wechsel auf alg none erzeugt ein RFC-konformes Unsecured JWT mit leerem Signatursegment", () => {
