@@ -14,6 +14,7 @@ The project currently has no tagged releases. Entries therefore follow the dates
 
 ### Changed
 
+- Aktualisierte die versionsbezogenen KI-Agenten-Freigaben auf die nach Story #142 gemergten Test-Workflow-Versionen für `master` und `release/**`.
 - Replaced the permanent `develop` integration-branch model with protected `master` and `release/*` targets, backed by a versioned repository ruleset.
 - Aligned test workflow branch filters with the protected branch model: `master` and `release/**` trigger CI, while the retired `develop` branch no longer does.
 - Modularized the binding AI-agent harness into a concise `AGENTS.md` entry point and topic-specific rules under `agent-rules/`, while preserving the browser-native architecture, offline, security, StrykerJS and converter requirements.
