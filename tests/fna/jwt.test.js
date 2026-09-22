@@ -38,13 +38,16 @@ test("Base64URL lehnt ungültige Zeichen, Längen und ungültiges UTF-8 ab", () 
 
 test("typisches signiertes JWT wird dekodiert, aber ausdrücklich nicht verifiziert", () => {
     const api = loadJwtApi();
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-        "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
-        "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    const headerSegment = api.encodeBase64Url('{"alg":"HS256","typ":"JWT"}');
+    const payloadSegment = api.encodeBase64Url(
+        '{"sub":"synthetic-test-subject","name":"Synthetic Test User","iat":1516239022}'
+    );
+    const signatureSegment = api.encodeBase64Url("synthetic-test-signature-not-cryptographic");
+    const token = `${headerSegment}.${payloadSegment}.${signatureSegment}`;
     const decoded = api.decode(token);
 
     assert.equal(decoded.header.alg, "HS256");
-    assert.equal(decoded.payload.sub, "1234567890");
+    assert.equal(decoded.payload.sub, "synthetic-test-subject");
     assert.equal(decoded.payload.iat, 1516239022);
     assert.equal(decoded.signatureStatus.text.includes("nicht geprüft"), true);
     assert.equal(api.build(decoded.headerJson, decoded.payloadJson, decoded).token, token);
