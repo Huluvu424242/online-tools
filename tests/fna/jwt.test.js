@@ -156,6 +156,6 @@ test("HTML integriert das JWT-Tool zugänglich und lokal", () => {
     assert.match(html, /id="tool-jwt"/);
     assert.match(html, /id="jwtErrors"[^>]*role="alert"/);
     assert.match(html, /id="jwtSignature"[^>]*readonly/);
-    assert.match(html, /Das Dekodieren eines JWT bestätigt weder dessen Echtheit noch die Gültigkeit seiner Signatur/);
+    assert.match(html, /Das Dekodieren eines JWT bestätigt weder dessen Echtheit\s+noch die\s+Gültigkeit seiner Signatur/);
     assert.match(html, /Verarbeitung erfolgt ausschließlich lokal im Browser/);
 });
