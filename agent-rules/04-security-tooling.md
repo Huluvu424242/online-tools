@@ -41,6 +41,16 @@ Eine künftige Dauerfreigabe muss versionsbezogen mindestens Repository, Workflo
 
 Die bloße automatische Ausführung eines GitHub-Workflows durch GitHub ändert nichts daran, dass ein Agent vor einem schreibenden Vorgang prüfen muss, ob er nach den geltenden Freigaben diesen Trigger verursachen darf.
 
+## Vertrauensbereich und Plattformbetrieb
+
+- Die Regeln unterscheiden zwischen fachlichen **Anwendungsdaten** und **Entwicklungs-/Plattformdaten**.
+- Fachliche Nutzereingaben und mit den Tools verarbeitete Inhalte sollen den Browser beziehungsweise den vorgesehenen lokalen oder unternehmensinternen Vertrauensbereich nicht ungefragt verlassen.
+- Repository-Inhalte, Pull Requests, Issues, Testberichte und CI-Ergebnisse dürfen innerhalb der jeweils vorgesehenen GitHub- oder GitHub-Enterprise-Plattform verarbeitet werden.
+- Wird das Projekt auf einer GitHub-Enterprise-Instanz im Firmennetz betrieben, ist die Nutzung der dort vorhandenen Actions, Issues, Pages, Releases und sonstigen Plattformdienste ausdrücklich mit der Architektur vereinbar. Die Agenten-Freigabe- und Minimal-Permissions-Regeln gelten weiterhin.
+- Konfigurierbare Plattformziele sollen keine öffentliche GitHub-Domain fest voraussetzen, wenn eine GitHub-Enterprise-Installation ein erwartetes Einsatzszenario ist.
+- Ein Wechsel zwischen öffentlichem GitHub und GitHub Enterprise darf nicht dazu führen, dass fachliche Nutzerdaten versehentlich an die jeweils andere Plattform übertragen werden.
+- Externe Links dürfen geöffnet werden. Vor einer bewussten Datenübergabe, etwa beim Erstellen eines Fehlerberichts, muss erkennbar sein, welche Daten an welches Ziel übergeben werden.
+
 ## Security-Anforderungen an Anwendungscode
 
 Alle extern gelieferten oder vom Nutzer kontrollierten Werte gelten als nicht vertrauenswürdig.
