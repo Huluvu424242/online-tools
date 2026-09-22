@@ -26,15 +26,20 @@ function loadCalendarWeek() {
         "#calendarWeekStatus": createElement()
     };
     const announcements = [];
+    const documentListeners = new Map();
     const toolWindow = {};
 
     global.window = toolWindow;
-    global.document = {addEventListener() {}};
+    global.document = {
+        addEventListener(type, listener) {
+            documentListeners.set(type, listener);
+        }
+    };
     global.$ = (selector) => elements[selector] || null;
     global.setAnnounce = (message) => announcements.push(message);
 
     global.eval(fs.readFileSync("src/calendar-week.js", "utf8") + "\n//# sourceURL=src/calendar-week.js");
-    return {api: toolWindow.OnlineToolsCalendarWeek, elements, announcements};
+    return {api: toolWindow.OnlineToolsCalendarWeek, elements, announcements, documentListeners};
 }
 
 test("ISO-Kalenderwochen werden auch an Jahresgrenzen korrekt bestimmt", () => {
@@ -61,6 +66,9 @@ test("Datumswerte werden streng validiert und lokal formatiert", () => {
     assert.equal(api.parseCalendarDate("1900-02-29"), null);
     assert.equal(api.parseCalendarDate("2000-02-29")?.getDate(), 29);
     assert.equal(api.parseCalendarDate("2026-12-31")?.getMonth(), 11);
+    assert.equal(api.parseCalendarDate("x2026-09-22"), null);
+    assert.equal(api.parseCalendarDate("2026-09-22x"), null);
+    assert.equal(api.parseCalendarDate("0000-01-01"), null);
     assert.throws(() => api.getIsoWeekInfo(new Date("invalid")), /gültiges Datum/);
     assert.throws(() => api.getIsoWeekInfo("2026-09-22"), /gültiges Datum/);
     assert.throws(() => api.getIsoWeekInfo(null), /gültiges Datum/);
@@ -127,9 +135,26 @@ test("UI behandelt ungültige Eingaben verständlich und bleibt bei fehlenden El
     global.$ = originalQuery;
 });
 
-test("Formatierung erhält führende Nullen für einstellige Monats- und Tageswerte", () => {
+test("Formatierung erhält führende Nullen auch für kurze Jahreswerte", () => {
     const {api} = loadCalendarWeek();
+    const earlyYear = new Date(0);
+    earlyYear.setFullYear(5, 0, 1);
 
     assert.equal(api.formatCalendarDate(new Date(2026, 0, 1)), "2026-01-01");
     assert.equal(api.formatCalendarDate(new Date(2026, 10, 9)), "2026-11-09");
+    assert.equal(api.formatCalendarDate(earlyYear), "0005-01-01");
+});
+
+test("DOMContentLoaded initialisiert das Kalenderwochen-Tool", () => {
+    const {elements, documentListeners} = loadCalendarWeek();
+    const listener = documentListeners.get("DOMContentLoaded");
+
+    assert.equal(typeof listener, "function");
+    assert.equal(documentListeners.has(""), false);
+
+    listener();
+
+    assert.match(elements["#calendarDate"].value, /^\d{4}-\d{2}-\d{2}$/);
+    assert.match(elements["#calendarCurrentWeek"].textContent, /^KW \d{1,2} \/ \d{4}$/);
+    assert.match(elements["#calendarWeekResult"].textContent, /^KW \d{1,2} \/ \d{4}$/);
 });
