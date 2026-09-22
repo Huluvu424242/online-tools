@@ -5,6 +5,7 @@ const config = {
     packageManager: "npm",
     mutate: [
         "src/base64.js",
+        "src/calendar-week.js",
         "src/cron-erklaerer.js",
         "src/jwt.js",
         "src/regex-checker.js",
