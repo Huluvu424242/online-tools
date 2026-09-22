@@ -11,6 +11,10 @@ The project currently has no tagged releases. Entries therefore follow the dates
 - Central change log for user-visible features, security fixes and relevant maintenance work.
 - Fix for [GHSA-7p8r-x3mc-p8w7](https://github.com/fastify/fast-uri/security/advisories/GHSA-7p8r-x3mc-p8w7)
 
+### Changed
+
+- Modularized the binding AI-agent harness into a concise `AGENTS.md` entry point and topic-specific rules under `agent-rules/`, while preserving the browser-native architecture, offline, security, StrykerJS and converter requirements.
+
 ## 2026-07-11
 
 ### Added
