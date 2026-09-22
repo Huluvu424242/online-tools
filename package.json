@@ -7,7 +7,7 @@
     "test": "node tests/run-all.js",
     "test:fna": "node tests/run-fna.js",
     "test:nfa": "node tests/run-nfa.js",
-    "mutation": "stryker run --mutate \"src/calendar-week.js\"",
+    "mutation": "stryker run",
     "update:manifest": "node scripts/update-offline-manifest.js"
   },
   "devDependencies": {
