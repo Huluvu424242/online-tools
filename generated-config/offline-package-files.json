@@ -4,8 +4,8 @@
   "files": [
     ".github/ISSUE_TEMPLATE/bug_report.md",
     ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/workflows/kiagent-qstests.yml",
     ".github/workflows/mutationtests.yml",
-    ".github/workflows/tests.yml",
     ".gitignore",
     "AGENTS.md",
     "ATTRIBUTION",
