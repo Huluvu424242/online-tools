@@ -8,6 +8,7 @@ The project currently has no tagged releases. Entries therefore follow the dates
 
 ### Added
 
+- Bidirectional JWT decoder and manipulator with local Base64URL/UTF-8 processing, editable JOSE header and claims, explicit signature state, and RFC-conformant `alg: none` output.
 - Central change log for user-visible features, security fixes and relevant maintenance work.
 - Fix for [GHSA-7p8r-x3mc-p8w7](https://github.com/fastify/fast-uri/security/advisories/GHSA-7p8r-x3mc-p8w7)
 
