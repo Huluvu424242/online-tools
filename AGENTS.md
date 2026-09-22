@@ -43,6 +43,7 @@ Diese Leitplanken dürfen ohne ausdrückliche Anweisung des Maintainers nicht ge
 - Externe Links und bewusst vom Nutzer ausgelöste Übergaben an konfigurierte Plattformdienste sind zulässig, wenn transparent ist, welche Daten den Browser verlassen.
 - `generated-config/production-sources.json` bleibt die zentrale Definition produktiver Quellen.
 - Mobile First, Datenlokalität, Datenschutz, Security, Regressionstests und die verbindliche StrykerJS-Strategie bleiben Projektanforderungen.
+- Als dauerhaft geschützte Zielbranches gelten ausschließlich `master` und `release/*`; ein dauerhafter `develop`-Integrationsbranch ist nicht Teil des Branchmodells.
 
 Details stehen in den verlinkten Regeldateien und sind dort verbindlich.
 
