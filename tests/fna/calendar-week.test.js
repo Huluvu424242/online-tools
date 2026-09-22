@@ -88,7 +88,18 @@ test("UI zeigt aktuelle und ausgewählte Kalenderwoche an", () => {
     elements["#calendarCalculate"].click();
     assert.equal(elements["#calendarWeekResult"].textContent, "KW 53 / 2020");
     assert.equal(elements["#calendarWeekStatus"].textContent, "Kalenderwoche für 2021-01-01 berechnet.");
+    assert.equal(elements["#calendarWeekStatus"].style.color, "var(--muted)");
     assert.ok(announcements.includes("Kalenderwoche 53 im Jahr 2020"));
+
+    elements["#calendarDate"].value = "2024-12-30";
+    elements["#calendarDate"].change();
+    assert.equal(elements["#calendarWeekResult"].textContent, "KW 1 / 2025");
+    assert.equal(elements["#calendarWeekStatus"].textContent, "Kalenderwoche für 2024-12-30 berechnet.");
+
+    elements["#calendarDate"].value = "2021-01-01";
+    elements["#calendarToday"].click();
+    assert.equal(elements["#calendarDate"].value, "2026-09-22");
+    assert.equal(elements["#calendarWeekResult"].textContent, "KW 39 / 2026");
 });
 
 test("UI behandelt ungültige Eingaben verständlich und bleibt bei fehlenden Elementen robust", () => {
@@ -102,6 +113,23 @@ test("UI behandelt ungültige Eingaben verständlich und bleibt bei fehlenden El
     assert.equal(elements["#calendarWeekStatus"].style.color, "var(--danger)");
 
     const originalQuery = global.$;
-    global.$ = (selector) => selector === "#calendarDate" ? null : originalQuery(selector);
-    assert.doesNotThrow(() => api.init(new Date(2026, 8, 22)));
+    for (const missingSelector of [
+        "#calendarCurrentWeek",
+        "#calendarDate",
+        "#calendarCalculate",
+        "#calendarToday",
+        "#calendarWeekResult",
+        "#calendarWeekStatus"
+    ]) {
+        global.$ = (selector) => selector === missingSelector ? null : originalQuery(selector);
+        assert.doesNotThrow(() => api.init(new Date(2026, 8, 22)));
+    }
+    global.$ = originalQuery;
+});
+
+test("Formatierung erhält führende Nullen für einstellige Monats- und Tageswerte", () => {
+    const {api} = loadCalendarWeek();
+
+    assert.equal(api.formatCalendarDate(new Date(2026, 0, 1)), "2026-01-01");
+    assert.equal(api.formatCalendarDate(new Date(2026, 10, 9)), "2026-11-09");
 });
