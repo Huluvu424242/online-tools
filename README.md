@@ -22,9 +22,29 @@ Auf der Startseite gibt es den Button **Offline-ZIP herunterladen**. Damit wird 
 
 - Cron Erklärer
 - De-/Encoder für Base64 und ROT13
+- JWT Decoder & Manipulator für bidirektionale Bearbeitung von JOSE-Header und Claims
 - Konverter für YAML/Properties und Java-nahe Konfigurationen
 - Regex Checker mit lokaler ReDoS-Heuristik
 - Regex Vergleich für eine eingeschränkte reguläre Teilmenge
+
+## JWT Decoder & Manipulator
+
+Das JWT-Tool zerlegt eine JWT Compact Serialization lokal in **JOSE-Header**, **Payload/Claims** und
+**Signatursegment**. Header und Payload werden als eingerücktes JSON angezeigt und können direkt bearbeitet
+werden; beliebige Keys, Arrays, verschachtelte Objekte, Zahlen, Booleans und `null` bleiben erhalten.
+Anschließend kann daraus wieder ein JWT erzeugt werden.
+
+JWT verwendet **Base64URL**. Das reine Dekodieren prüft jedoch keine kryptografische Signatur und bestätigt
+weder Echtheit noch Vertrauenswürdigkeit des Tokens. Wird Header oder Payload eines signierten JWT geändert,
+wird die vorhandene Signatur ausdrücklich als ungültig geworden gekennzeichnet; eine Neusignierung findet in
+diesem Tool nicht statt.
+
+`"alg": "none"` wird als Unsecured JWT unterstützt. In diesem Fall erzeugt das Tool RFC-konform ein leeres
+Signatursegment (`header.payload.`) und weist sichtbar darauf hin, dass das Token nicht kryptografisch
+signiert ist.
+
+JWT-Inhalte werden ausschließlich im Browser verarbeitet, nicht an externe APIs übertragen und nicht
+automatisch in LocalStorage, SessionStorage oder IndexedDB gespeichert.
 
 ## Tests
 
