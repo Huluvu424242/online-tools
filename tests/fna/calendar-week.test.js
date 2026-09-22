@@ -54,7 +54,26 @@ test("Datumswerte werden streng validiert und lokal formatiert", () => {
     assert.equal(api.parseCalendarDate("2023-02-29"), null);
     assert.equal(api.parseCalendarDate("2026-13-01"), null);
     assert.equal(api.parseCalendarDate("22.09.2026"), null);
+    assert.equal(api.parseCalendarDate("2026-09-2"), null);
+    assert.equal(api.parseCalendarDate("2026-00-10"), null);
+    assert.equal(api.parseCalendarDate("2026-01-00"), null);
+    assert.equal(api.parseCalendarDate("2026-04-31"), null);
+    assert.equal(api.parseCalendarDate("1900-02-29"), null);
+    assert.equal(api.parseCalendarDate("2000-02-29")?.getDate(), 29);
+    assert.equal(api.parseCalendarDate("2026-12-31")?.getMonth(), 11);
     assert.throws(() => api.getIsoWeekInfo(new Date("invalid")), /gültiges Datum/);
+    assert.throws(() => api.getIsoWeekInfo("2026-09-22"), /gültiges Datum/);
+    assert.throws(() => api.getIsoWeekInfo(null), /gültiges Datum/);
+});
+
+test("ISO-Kalenderwochen unterscheiden Wochenanfang, Wochenende und 53-Wochen-Jahre", () => {
+    const {api} = loadCalendarWeek();
+
+    assert.deepEqual(api.getIsoWeekInfo(new Date(2020, 11, 31)), {week: 53, year: 2020});
+    assert.deepEqual(api.getIsoWeekInfo(new Date(2021, 0, 3)), {week: 53, year: 2020});
+    assert.deepEqual(api.getIsoWeekInfo(new Date(2021, 0, 10)), {week: 1, year: 2021});
+    assert.deepEqual(api.getIsoWeekInfo(new Date(2026, 8, 21)), {week: 39, year: 2026});
+    assert.deepEqual(api.getIsoWeekInfo(new Date(2026, 8, 27)), {week: 39, year: 2026});
 });
 
 test("UI zeigt aktuelle und ausgewählte Kalenderwoche an", () => {
