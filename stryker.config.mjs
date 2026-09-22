@@ -4,7 +4,15 @@
 const config = {
     packageManager: "npm",
     mutate: [
-        "src/calendar-week.js"
+        "src/base64.js",
+        "src/calendar-week.js",
+        "src/cron-erklaerer.js",
+        "src/jwt.js",
+        "src/regex-checker.js",
+        "src/regex-compare.js",
+        "src/rot13.js",
+        "src/yaml-properties.js",
+        "src/zip.js"
     ],
 
     testRunner: "command",
