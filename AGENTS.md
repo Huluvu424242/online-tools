@@ -1,6 +1,6 @@
 # Arbeitsregeln für KI-Assistenten
 
-Diese Datei ist der verbindliche Einstiegspunkt für alle Repository-Arbeiten an **online-tools**. Das Projekt ist eine vollständig statische, browser-native Webanwendung ohne produktiven Build-Schritt und ohne notwendige Server- oder Backend-Abhängigkeit.
+Diese Datei ist der verbindliche Einstiegspunkt für alle Repository-Arbeiten an **online-tools**. Das Projekt ist eine vollständig statische, browser-native Webanwendung ohne produktiven Build-Schritt, ohne eigenen Anwendungsserver und ohne verpflichtendes separates Backend.
 
 ## Verbindliche Regelstruktur
 
@@ -14,6 +14,7 @@ Diese Datei ist der verbindliche Einstiegspunkt für alle Repository-Arbeiten an
 6. [Dokumentation und Lizenzen](agent-rules/06-documentation.md)
 7. [Release und Abschluss](agent-rules/07-release-completion.md)
 8. [Domänenspezifische Regeln](agent-rules/08-domain-specific.md)
+9. [Web-Grundgerüst und Supportfunktionen](agent-rules/09-web-bootstrap.md)
 
 Eine Repository-Arbeit darf nicht begonnen werden, bevor alle genannten Regeldateien gelesen wurden.
 
@@ -36,9 +37,12 @@ Diese Leitplanken dürfen ohne ausdrückliche Anweisung des Maintainers nicht ge
 - GitHub Pages veröffentlicht die eingecheckten statischen Dateien direkt.
 - Das Offline-ZIP bleibt ohne Build-Schritt unmittelbar nutzbar.
 - Node.js ist ausschließlich Entwicklungs-, Analyse- und Testwerkzeug.
-- Kernfunktionen benötigen weder Server, Serverless-Funktionen noch externe APIs, sofern eine konkrete Story nicht ausdrücklich etwas anderes verlangt.
+- Die Anwendung benötigt keinen eigenen Anwendungsserver und kein separat betriebenes Backend.
+- Vorhandene Infrastruktur- und Plattformdienste wie GitHub oder GitHub Enterprise dürfen für Hosting, Dokumentation, Issues, Releases, Quellcodeverwaltung und Entwicklungsautomatisierung genutzt werden, wenn dies die Datenlokalität und den vorgesehenen Vertrauensbereich respektiert.
+- Fachliche Nutzereingaben und zu verarbeitende Daten bleiben standardmäßig im Browser beziehungsweise im vorgesehenen lokalen oder Unternehmensnetz. Sie werden nicht ungefragt an externe Dienste übertragen.
+- Externe Links und bewusst vom Nutzer ausgelöste Übergaben an konfigurierte Plattformdienste sind zulässig, wenn transparent ist, welche Daten den Browser verlassen.
 - `generated-config/production-sources.json` bleibt die zentrale Definition produktiver Quellen.
-- Mobile First, Offline-Fähigkeit, Datenschutz, Security, Regressionstests und die verbindliche StrykerJS-Strategie bleiben Projektanforderungen.
+- Mobile First, Datenlokalität, Datenschutz, Security, Regressionstests und die verbindliche StrykerJS-Strategie bleiben Projektanforderungen.
 
 Details stehen in den verlinkten Regeldateien und sind dort verbindlich.
 
@@ -49,5 +53,5 @@ Bei Widersprüchen gilt:
 1. Eine ausdrückliche, auf die konkrete Aufgabe bezogene Anweisung des Maintainers hat Vorrang vor allgemeinen Projektregeln, soweit sie nicht gegen übergeordnete Sicherheits- oder Plattformvorgaben verstößt.
 2. Sicherheitsregeln haben Vorrang vor anderen Projektregeln.
 3. Spezifische Regeln haben Vorrang vor allgemeinen Regeln.
-4. Bestehende projektspezifische Regeln für Architektur, Offline-Betrieb, Security, Stryker und Konverter haben Vorrang vor aus Referenzprojekten übernommenen generischen Prinzipien.
+4. Bestehende projektspezifische Regeln für Architektur, Datenlokalität, Security, Stryker und Konverter haben Vorrang vor aus Referenzprojekten übernommenen generischen Prinzipien.
 5. Kann ein Widerspruch dadurch nicht eindeutig aufgelöst werden, wird nicht geraten. Die Arbeit wird an der betroffenen Stelle angehalten und der Maintainer über den Konflikt informiert.
