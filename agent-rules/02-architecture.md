@@ -13,9 +13,9 @@ Dieses Projekt verfolgt einen konsequenten Mobile-First-Ansatz.
 
 Detaillierte Anforderungen an Touch-Ziele, Tastaturbedienung, Fokusführung und semantische Beschriftung stehen unter [UX und Barrierefreiheit](03-ux-accessibility.md).
 
-## Verbindliche Architektur: Browser-native Anwendung ohne Build-Schritt
+## Verbindliche Architektur: Browser-native Anwendung ohne eigenen Backend-Betrieb
 
-Dieses Projekt ist eine vollständig statische, browser-native Anwendung.
+Dieses Projekt ist eine vollständig statische, browser-native Anwendung. Es betreibt keinen eigenen Anwendungsserver und benötigt kein separat entwickeltes oder separat zu hostendes Backend für seine Kernfunktionen.
 
 Die produktive Anwendung muss jederzeit direkt aus den im Repository enthaltenen Dateien ausführbar sein. Nutzer müssen die Anwendung verwenden können, indem sie das Repository beziehungsweise das Offline-ZIP entpacken und `index.html` in einem unterstützten Browser öffnen.
 
@@ -28,10 +28,24 @@ Die produktive Anwendung muss jederzeit direkt aus den im Repository enthaltenen
 - GitHub Pages muss die eingecheckten statischen Dateien direkt veröffentlichen können.
 - Das Offline-ZIP muss ausschließlich bereits eingecheckte, unmittelbar ausführbare Dateien enthalten.
 - Die Anwendung muss grundsätzlich ohne Internetverbindung funktionieren.
-- Nutzereingaben und fachliche Verarbeitung müssen im Browser bleiben, sofern eine konkrete Funktion nicht ausdrücklich etwas anderes verlangt.
-- Es dürfen keine serverseitigen Komponenten, Serverless-Funktionen oder externen APIs als Voraussetzung für bestehende oder neue Kernfunktionen eingeführt werden.
+- Fachliche Nutzereingaben und zu verarbeitende Inhalte bleiben standardmäßig im Browser beziehungsweise im vorgesehenen lokalen oder Unternehmensnetz.
+- Öffentliche GitHub-Infrastruktur und eine spätere interne GitHub-Enterprise-Installation sind beide erwartete Einsatzmodelle.
+- Vorhandene Plattformdienste wie Pages, Issues, Releases, Dokumentation und Actions dürfen genutzt werden, wenn sie im vorgesehenen Vertrauensbereich liegen und keine fachlichen Nutzerdaten ungefragt nach außen übertragen.
+- Externe Links sind zulässig. Eine bewusste Nutzeraktion darf Daten an ein konfiguriertes Plattformziel übergeben, wenn vorher erkennbar ist, welche Daten übertragen werden.
+- Plattformfunktionen sollen genutzt werden, wenn sie den benötigten Zweck bereits erfüllen; Funktionen werden nicht allein deshalb in der App neu implementiert, weil sie technisch lokal nachgebaut werden könnten.
 
 Änderungen, die gegen diese Architektur verstoßen, dürfen nicht umgesetzt werden, ohne dass der Maintainer die Architekturänderung ausdrücklich verlangt.
+
+### Datenlokalität und Plattformdienste
+
+- Zentrales Ziel ist nicht die pauschale Vermeidung von Netzwerk- oder Plattformdiensten, sondern die Kontrolle darüber, wo fachliche Nutzerdaten verarbeitet werden und welchen Vertrauensbereich sie verlassen.
+- Bei einer Bereitstellung im Unternehmensnetz dürfen Hosting, Dokumentation, Issues, Releases, CI und Entwicklungswerkzeuge vollständig innerhalb der dort betriebenen GitHub-Enterprise-Infrastruktur stattfinden.
+- Eine GitHub-Enterprise-Instanz im Firmennetz darf ihre eigenen Actions ausführen; deren Resultate können damit vollständig im Unternehmensumfeld verbleiben.
+- Konfigurierbare Plattformziele dürfen nicht unnötig auf `github.com` fest verdrahtet werden, wenn GitHub Enterprise ein erwartetes Einsatzszenario ist.
+- Das bloße Verlinken externer Dokumentation oder Projektressourcen ist zulässig. Fachliche Nutzerdaten werden dadurch nicht automatisch übertragen.
+- Bei bewussten Datenübergaben gilt Datenminimierung: nur der für den konkreten Zweck notwendige und für den Nutzer erkennbare Inhalt verlässt den Browser.
+
+Die Nutzung von GitHub Actions durch KI-Agenten unterliegt zusätzlich den Freigaberegeln aus [Sicherheit und Werkzeugketten](04-security-tooling.md).
 
 ### Produktive Quellen
 
@@ -88,7 +102,7 @@ Ohne ausdrückliche Anweisung des Maintainers dürfen insbesondere nicht eingef�
 - npm-basierte Produktionsstarts
 - ein lokaler Entwicklungsserver als Voraussetzung zur Nutzung
 - CDN-Abhängigkeiten
-- Backend-Dienste für Funktionen, die vollständig lokal umgesetzt werden können
+- ein eigenes separat betriebenes Backend für Funktionen, die browserlokal oder sinnvoll durch die vorgesehene Plattforminfrastruktur erbracht werden können
 - produktiver Code, der erst nach einer Paketinstallation verfügbar ist
 
 Ein optionaler lokaler HTTP-Server darf nur zur Entwicklung oder zum Testen verwendet werden. Er darf nicht zur Voraussetzung für GitHub Pages, das Offline-ZIP oder die normale Nutzung werden.
@@ -103,5 +117,5 @@ Ein optionaler lokaler HTTP-Server darf nur zur Entwicklung oder zum Testen verw
 - Lade-, Leer-, Erfolgs- und Fehlerzustände sichtbar behandeln, wenn sie für die Funktion relevant sind.
 - Nutzereingaben bei Fehlern erhalten.
 - Fehler nicht still ignorieren; leere `catch`-Blöcke sind unzulässig.
-- Externe Abhängigkeiten nur mit belegbarem Nutzen, Lizenzprüfung und unter Beachtung der Offline- und Build-Leitplanken einführen.
+- Externe Abhängigkeiten nur mit belegbarem Nutzen, Lizenzprüfung und unter Beachtung der Datenlokalitäts-, Offline- und Build-Leitplanken einführen.
 - Daten- und Kontrollflüsse so gestalten, dass sicherheitsrelevante Übergänge und Serialisierungsgrenzen klar erkennbar und testbar sind.
