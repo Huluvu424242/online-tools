@@ -79,16 +79,17 @@ test("Claims und verschachtelte JSON-Strukturen lassen sich ändern und neu seri
 
 test("eine vorhandene Signatur wird nach Inhaltsänderung als ungültig markiert", () => {
     const api = loadJwtApi();
+    const signatureSegment = api.encodeBase64Url("synthetic-signature");
     const original = api.decode(
         [
             api.encodeBase64Url('{"alg":"HS256"}'),
             api.encodeBase64Url('{"sub":"1"}'),
-            api.encodeBase64Url("synthetic-signature")
+            signatureSegment
         ].join(".")
     );
     const changed = api.build(original.headerJson, '{"sub":"2"}', original);
 
-    assert.equal(changed.signature, "c2lnbmF0dXJl");
+    assert.equal(changed.signature, signatureSegment);
     assert.equal(changed.signatureInvalidated, true);
     assert.match(changed.signatureStatus.text, /durch Änderung ungültig/);
 
