@@ -29,10 +29,20 @@ Ein gemeldeter Defekt wird nicht still repariert. Sofern noch kein passendes Iss
 
 Das Bug-Issue beschreibt mindestens Fehlerbild, Analyse beziehungsweise vermutete Ursache, betroffene Komponenten und Lösungsansatz. Der PR verknüpft das Issue mit einem Closing-Keyword und nennt Ursache, Lösung, Prüfungen und Restunsicherheiten.
 
+## Geschützte Branches
+
+- Ausschließlich der Branch `master` und alle Branches mit dem Präfix `release/` werden dauerhaft als geschützte Zielbranches geführt.
+- Ein dauerhafter Integrationsbranch `develop` ist nicht Teil des Branchmodells. Story- und Bug-Arbeiten erfolgen auf kurzlebigen Arbeitsbranches und werden direkt gegen `master` oder, wenn ausdrücklich vorgesehen, gegen einen passenden `release/*`-Branch geführt.
+- Änderungen an `master` und `release/*` erfolgen ausschließlich über Pull Requests. Direkte Commits, direkte Löschungen und Force Pushes auf diese Zielbranches sind unzulässig.
+- Für die Aufnahme einer Änderung ist keine zustimmende Review verpflichtend, da das Repository als Einzelentwickler-Projekt geführt wird. Offene Review-Diskussionen müssen vor dem Merge dennoch aufgelöst sein.
+- Die versionierte Soll-Konfiguration für den Branchschutz liegt unter `gh-rulesets/protected-branches.json` und muss `master` sowie neu angelegte `release/*`-Branches ohne zusätzliche Einzelkonfiguration erfassen.
+- Ändern sich Schutzanforderungen, werden Harness, versionierte Ruleset-Datei und das auf GitHub aktive Ruleset gemeinsam betrachtet und synchron gehalten. Änderungen an den aktiven GitHub-Projekteinstellungen erfolgen nur nach den dafür geltenden Sicherheits- und Freigaberegeln.
+- Technische Workflow-Trigger sind keine Branch-Policy. Veraltete Trigger auf nicht mehr verwendete Branches werden ausschließlich über den separaten Werkzeugketten-Prozess aus [Sicherheit und Werkzeugketten](04-security-tooling.md) bereinigt.
+
 ## Branches und Pull Requests
 
-- Für jede Story oder jeden Bug wird ein eigener Arbeitsbranch verwendet und der Umfang eng gehalten.
-- `master` und `release/*` werden ausschließlich über Pull Requests verändert. Direkte Commits, direkte Löschungen oder Force Pushes auf diese Zielbranches sind unzulässig.
+- Für jede Story oder jeden Bug wird ein eigener, kurzlebiger Arbeitsbranch verwendet und der Umfang eng gehalten.
+- Standardziel für Pull Requests ist `master`. Ein `release/*`-Branch wird nur dann als Ziel verwendet, wenn die Änderung ausdrücklich für diesen Releasezweig bestimmt ist.
 - Ein Pull Request enthält mindestens Ziel, Änderungen, ausgeführte Prüfungen, Dokumentationsstatus, Risiken beziehungsweise Restunsicherheiten und ein Closing-Keyword wie `Closes #123`.
 - Arbeitsbranches dürfen auf den aktuellen Zielbranch rebased werden. Geteilte Branches nur nach Abstimmung rebasen.
 - Nach einem Rebase sind die relevanten Prüfungen erneut auszuführen.
