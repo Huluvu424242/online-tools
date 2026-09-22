@@ -11,6 +11,7 @@ const mutationTestMap = new Map([
     ["src/base64.js", ["tests/fna/text-tools.test.js"]],
     ["src/rot13.js", ["tests/fna/text-tools.test.js"]],
     ["src/cron-erklaerer.js", ["tests/fna/cron-regex-checker.test.js"]],
+    ["src/jwt.js", ["tests/fna/jwt.test.js"]],
     ["src/regex-checker.js", ["tests/fna/cron-regex-checker.test.js", "tests/fna/regex-layout.test.js"]],
     ["src/regex-compare.js", ["tests/fna/regex-compare.test.js"]],
     ["src/yaml-properties.js", [
