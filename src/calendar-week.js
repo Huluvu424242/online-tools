@@ -27,8 +27,7 @@ function parseCalendarDate(value) {
 
     if (
         candidate.getFullYear() !== year ||
-        candidate.getMonth() !== month - 1 ||
-        candidate.getDate() !== day
+        candidate.getMonth() !== month - 1
     ) {
         return null;
     }
