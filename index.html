@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="src/styles.css"/>
     <script defer src="src/cron-erklaerer.js"></script>
     <script defer src="src/base64.js"></script>
+    <script defer src="src/jwt.js"></script>
     <script defer src="src/rot13.js"></script>
     <script defer src="src/zip.js"></script>
     <script defer src="src/yaml-properties.js"></script>
@@ -174,6 +175,83 @@
                     </div>
 
                     <p class="hint" id="b64Status" role="status" aria-live="polite"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOOL: JWT -->
+        <section class="tool" id="tool-jwt" data-name="JWT Decoder Manipulator" data-nav="JWT"
+                 data-nav-hint="Header, Claims, alg" data-tags="jwt jose token claims base64url decoder encoder">
+            <header class="tool-header">
+                <h1>JWT Decoder &amp; Manipulator</h1>
+                <p class="muted">
+                    JWT Compact Serialization lokal dekodieren, Header und Claims als JSON bearbeiten
+                    und wieder zu einem Token zusammensetzen.
+                </p>
+            </header>
+
+            <div class="notice" role="note" aria-label="JWT Datenschutz- und Sicherheitshinweis">
+                <strong>Lokal und ohne Verifikation:</strong>
+                Die Verarbeitung erfolgt ausschließlich lokal im Browser; JWT-Inhalte werden weder übertragen
+                noch automatisch gespeichert. Das Dekodieren eines JWT bestätigt weder dessen Echtheit noch die
+                Gültigkeit seiner Signatur.
+            </div>
+
+            <div id="jwtErrors" class="notice" role="alert" tabindex="-1" hidden></div>
+
+            <div class="grid">
+                <div class="panel">
+                    <label for="jwtCompact">JWT / Compact Serialization</label>
+                    <textarea id="jwtCompact" rows="8" maxlength="1000000" spellcheck="false"
+                              aria-describedby="jwtCompactHint"
+                              placeholder="header.payload.signature"></textarea>
+                    <p class="hint" id="jwtCompactHint">
+                        Das Token muss genau drei Base64URL-Segmente enthalten. Bei <code>alg: none</code>
+                        bleibt das dritte Segment leer, der abschließende Punkt bleibt erhalten.
+                    </p>
+                    <div class="row">
+                        <button class="btn primary" id="jwtDecode" type="button">JWT dekodieren</button>
+                        <button class="btn" id="jwtCopy" type="button">JWT kopieren</button>
+                        <button class="btn" id="jwtClear" type="button">Leeren</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="row space-between">
+                        <h2 class="panel-title">JOSE Header</h2>
+                        <button class="btn" id="jwtCopyHeader" type="button">Header kopieren</button>
+                    </div>
+                    <label class="sr-only" for="jwtHeader">JOSE Header als JSON</label>
+                    <textarea id="jwtHeader" rows="10" maxlength="1000000" spellcheck="false"
+                              placeholder="{&#10;  &quot;alg&quot;: &quot;HS256&quot;,&#10;  &quot;typ&quot;: &quot;JWT&quot;&#10;}"></textarea>
+                </div>
+
+                <div class="panel">
+                    <div class="row space-between">
+                        <h2 class="panel-title">Payload / Claims</h2>
+                        <button class="btn" id="jwtCopyPayload" type="button">Payload kopieren</button>
+                    </div>
+                    <label class="sr-only" for="jwtPayload">Payload und Claims als JSON</label>
+                    <textarea id="jwtPayload" rows="14" maxlength="1000000" spellcheck="false"
+                              placeholder="{&#10;  &quot;sub&quot;: &quot;1234567890&quot;&#10;}"></textarea>
+                    <div class="row">
+                        <button class="btn primary" id="jwtBuild" type="button">JWT aus JSON erzeugen</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2 class="panel-title">Signatur</h2>
+                    <label for="jwtSignature">Signatursegment (Base64URL)</label>
+                    <textarea id="jwtSignature" rows="5" spellcheck="false" readonly
+                              placeholder="Kein Signatursegment vorhanden."></textarea>
+                    <div class="flat-result flat-neutral" id="jwtSignatureStatus" role="status" aria-live="polite">
+                        Noch kein JWT verarbeitet.
+                    </div>
+                    <p class="hint">
+                        Dieses Tool erzeugt oder verifiziert keine kryptografischen Signaturen. Bei signierenden
+                        Algorithmen muss ein geändertes Token außerhalb dieses Tools mit dem passenden Schlüssel
+                        neu signiert werden. <code>alg: none</code> erzeugt ausdrücklich ein ungesichertes JWT.
+                    </p>
                 </div>
             </div>
         </section>
