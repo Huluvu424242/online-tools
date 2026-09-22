@@ -4,8 +4,8 @@
   "files": [
     ".github/ISSUE_TEMPLATE/bug_report.md",
     ".github/ISSUE_TEMPLATE/feature_request.md",
-    ".github/workflows/kiagent-qstests.yml",
     ".github/workflows/kiagent-mutationtests.yml",
+    ".github/workflows/kiagent-qstests.yml",
     ".gitignore",
     "AGENTS.md",
     "ATTRIBUTION",
@@ -30,6 +30,7 @@
     "docs/git-workflow-geschuetzte-branches.pdf",
     "generated-config/offline-package-files.json",
     "generated-config/production-sources.json",
+    "gh-rulesets/protected-branches.json",
     "index.html",
     "offline-package-files.json",
     "package-lock.json",
