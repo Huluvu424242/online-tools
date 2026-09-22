@@ -32,9 +32,9 @@ Für neue oder geänderte GitHub Actions, CI/CD-Pipelines, Bots, Automationen, e
 
 Stand der Prüfung für Story #137 am 22. September 2026:
 
-- `.github/workflows/tests.yml`, Workflow **Tests**, Git-Blob-SHA `79df5364382c851d38b9b672eba7b02820c4efa7`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und `develop` sowie `workflow_dispatch`.
+- `.github/workflows/kiagent-qstests.yml`, Workflow **Tests**, Git-Blob-SHA `79df5364382c851d38b9b672eba7b02820c4efa7`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und `develop` sowie `workflow_dispatch`.
 - `.github/workflows/mutationtests.yml`, Workflow **Tests - Mutation**, Git-Blob-SHA `894e49b433b7b7b3032e30f38c5a22d4ef4ddc18`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und `develop` sowie `workflow_dispatch`.
-- Auf `master` existiert zu diesem Stand **kein** Workflow mit dem Präfix `kiagent-`.
+- Der QS-Workflow trägt im Repository den Dateipräfix `kiagent-`; daraus folgt keine pauschale oder dauerhafte Ausführungsfreigabe. Maßgeblich bleibt der nachfolgend dokumentierte Erlaubnisvorbehalt.
 - Für keinen der beiden vorhandenen Workflows ist in diesem Harness eine dauerhafte selbständige Ausführungsfreigabe für KI-Agenten dokumentiert.
 
 Eine künftige Dauerfreigabe muss versionsbezogen mindestens Repository, Workflow-Datei und Workflow-Name, Git-Blob-SHA oder gleichwertige unveränderliche Version, Zweck, erlaubte Trigger beziehungsweise Ausführungen, Berechtigungen, Datenzugriffe, Secrets, Outputs/Artefakte und Geltungsdauer dokumentieren. Jede relevante Workflow-Änderung lässt eine solche Freigabe erlöschen.
