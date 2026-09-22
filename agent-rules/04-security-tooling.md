@@ -30,16 +30,32 @@ Für neue oder geänderte GitHub Actions, CI/CD-Pipelines, Bots, Automationen, e
 
 ### Aktueller Workflow-Bestand und Freigaben
 
-Stand der Prüfung für Story #137 am 22. September 2026:
+Stand der Prüfung am 22. September 2026 auf dem Arbeitsstand von Story #141:
 
-- `.github/workflows/kiagent-qstests.yml`, Workflow **Tests**, Git-Blob-SHA `79df5364382c851d38b9b672eba7b02820c4efa7`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und `develop` sowie `workflow_dispatch`.
-- `.github/workflows/mutationtests.yml`, Workflow **Tests - Mutation**, Git-Blob-SHA `894e49b433b7b7b3032e30f38c5a22d4ef4ddc18`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und `develop` sowie `workflow_dispatch`.
-- Der QS-Workflow trägt im Repository den Dateipräfix `kiagent-`; daraus folgt keine pauschale oder dauerhafte Ausführungsfreigabe. Maßgeblich bleibt der nachfolgend dokumentierte Erlaubnisvorbehalt.
-- Für keinen der beiden vorhandenen Workflows ist in diesem Harness eine dauerhafte selbständige Ausführungsfreigabe für KI-Agenten dokumentiert.
+- `.github/workflows/kiagent-qstests.yml`, Workflow **Tests**, Git-Blob-SHA `79df5364382c851d38b9b672eba7b02820c4efa7`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und derzeit noch `develop` sowie `workflow_dispatch`.
+- `.github/workflows/kiagent-mutationtests.yml`, Workflow **Tests - Mutation**, Git-Blob-SHA `894e49b433b7b7b3032e30f38c5a22d4ef4ddc18`, verwendet `contents: read`, Trigger auf `push` und `pull_request` für `master` und derzeit noch `develop` sowie `workflow_dispatch`.
 
-Eine künftige Dauerfreigabe muss versionsbezogen mindestens Repository, Workflow-Datei und Workflow-Name, Git-Blob-SHA oder gleichwertige unveränderliche Version, Zweck, erlaubte Trigger beziehungsweise Ausführungen, Berechtigungen, Datenzugriffe, Secrets, Outputs/Artefakte und Geltungsdauer dokumentieren. Jede relevante Workflow-Änderung lässt eine solche Freigabe erlöschen.
+### Für KI-Agenten freigegebene Workflows
 
-Die bloße automatische Ausführung eines GitHub-Workflows durch GitHub ändert nichts daran, dass ein Agent vor einem schreibenden Vorgang prüfen muss, ob er nach den geltenden Freigaben diesen Trigger verursachen darf.
+Die beiden oben referenzierten `kiagent-*`-Workflows sind für die selbständige Verwendung durch KI-Agenten freigegeben, solange exakt die nachfolgend referenzierten Versionen und Sicherheitsmerkmale gelten:
+
+- **Tests:** `.github/workflows/kiagent-qstests.yml`, Git-Blob-SHA `79df5364382c851d38b9b672eba7b02820c4efa7`.
+- **Tests - Mutation:** `.github/workflows/kiagent-mutationtests.yml`, Git-Blob-SHA `894e49b433b7b7b3032e30f38c5a22d4ef4ddc18`.
+- Zulässige Verwendung umfasst die in diesen Versionen vorhandenen automatischen `push`- und `pull_request`-Trigger sowie `workflow_dispatch` und das erneute Ausführen eines zu derselben freigegebenen Version gehörenden Laufs.
+- Die Freigabe umfasst ausschließlich die in den referenzierten Versionen vorhandenen Berechtigungen, Inputs, Datenzugriffe, Artefakte, Runner und Zwecke. Eine Erweiterung wird nicht still mitfreigegeben.
+- Die Workflows dürfen Repository-Inhalte und regulär auflösbare Entwicklungsabhängigkeiten verarbeiten sowie die in ihnen definierten Testreports als Artefakte erzeugen. Zusätzliche Secrets oder schreibende Repositoryberechtigungen sind nicht freigegeben.
+- Der Dateipräfix `kiagent-` kennzeichnet Workflows, die für Agentennutzung vorgesehen sind. Für die konkrete Ausführungsfreigabe ist zusätzlich der hier dokumentierte Referenzstand maßgeblich; der Präfix allein hebt die versionsbezogene Sicherheitsprüfung nicht auf.
+
+### Pflege der Workflow-Referenzen
+
+- Wird ein für KI-Agenten freigegebener Workflow umbenannt, verschoben oder inhaltlich geändert, müssen die Referenzen in diesem Freigabeverzeichnis im selben zugehörigen Harness-/Werkzeugketten-Kontext aktualisiert werden.
+- Dabei sind mindestens Dateipfad, sichtbarer Workflow-Name, Git-Blob-SHA oder gleichwertige unveränderliche Version, Trigger, Berechtigungen, Inputs, Outputs/Artefakte, Secrets, Datenzugriffe, Runner und Zweck erneut abzugleichen.
+- Eine reine Umbenennung bei unverändertem Blob-Inhalt darf die bestehende inhaltliche Sicherheitsbewertung übernehmen, muss aber den neuen Dateipfad hier ausdrücklich nachziehen.
+- Ändert sich der Blob-Inhalt oder eines der genannten Sicherheitsmerkmale, gilt die vorherige versionsbezogene Freigabe für den neuen Stand nicht automatisch weiter. Die neue Version wird erst nach der vorgeschriebenen Story, dem separaten Werkzeugketten-PR, menschlichem Review und einer ausdrücklich dokumentierten Freigabe selbständig verwendet.
+- Veraltete Dateipfade oder SHAs werden nicht parallel als scheinbar gültige Referenzen stehen gelassen.
+- Bei jeder Harness-Änderung, die GitHub-Actions-Rechte oder Branch-/PR-Abläufe betrifft, ist zu prüfen, ob die Referenzen dieses Freigabeverzeichnisses noch dem tatsächlichen Repository-Stand entsprechen.
+
+Die bloße automatische Ausführung eines anderen, nicht in diesem Freigabeverzeichnis erfassten GitHub-Workflows durch GitHub begründet keine Ausführungsfreigabe für einen KI-Agenten.
 
 ## Vertrauensbereich und Plattformbetrieb
 
