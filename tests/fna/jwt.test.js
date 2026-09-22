@@ -80,7 +80,11 @@ test("Claims und verschachtelte JSON-Strukturen lassen sich ändern und neu seri
 test("eine vorhandene Signatur wird nach Inhaltsänderung als ungültig markiert", () => {
     const api = loadJwtApi();
     const original = api.decode(
-        "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl"
+        [
+            api.encodeBase64Url('{"alg":"HS256"}'),
+            api.encodeBase64Url('{"sub":"1"}'),
+            api.encodeBase64Url("synthetic-signature")
+        ].join(".")
     );
     const changed = api.build(original.headerJson, '{"sub":"2"}', original);
 
@@ -99,7 +103,13 @@ test("eine vorhandene Signatur wird nach Inhaltsänderung als ungültig markiert
 
 test("Wechsel auf alg none erzeugt ein RFC-konformes Unsecured JWT mit leerem Signatursegment", () => {
     const api = loadJwtApi();
-    const original = api.decode("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln");
+    const original = api.decode(
+        [
+            api.encodeBase64Url('{"alg":"HS256"}'),
+            api.encodeBase64Url('{"sub":"1"}'),
+            api.encodeBase64Url("sig")
+        ].join(".")
+    );
     const unsecured = api.build('{"alg":"none","typ":"JWT"}', original.payloadJson, original);
 
     assert.equal(unsecured.token.endsWith("."), true);
@@ -110,7 +120,13 @@ test("Wechsel auf alg none erzeugt ein RFC-konformes Unsecured JWT mit leerem Si
 
 test("alg none mit Signatur und fehlendes alg werden eindeutig gekennzeichnet", () => {
     const api = loadJwtApi();
-    const noneWithSignature = api.decode("eyJhbGciOiJub25lIn0.e30.c2ln");
+    const noneWithSignature = api.decode(
+        [
+            api.encodeBase64Url('{"alg":"none"}'),
+            api.encodeBase64Url("{}"),
+            api.encodeBase64Url("sig")
+        ].join(".")
+    );
     assert.match(noneWithSignature.signatureStatus.text, /nicht leer/);
 
     const noAlg = api.build("{}", "{}");
